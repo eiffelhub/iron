@@ -1,0 +1,58 @@
+__TOC__
+
+=Heading 1=
+[[File:wiki.png|alt=Puzzle globe logo]]
+==Heading 2==
+Text Text Text Text ''Text'' Text Text Text Text Text Text Text
+Text Text Text Text Text Text Text Text Text Text Text Text
+
+===Heading 3===
+Text Text Text ''Text'' Text Text Text Text Text Text Text Text
+Text Text Text Text Text Text Text Text Text Text Text Text
+[[File:wiki.png|alt=Puzzle globe logo]]
+====Heading 4====
+Text Text Text Text [http://www.wikipedia.org Wikipedia] Text 
+Text Text Text Text Text '''Text Text''' Text Text Text Text Text
+=====Heading 5=====
+Text Text Text Text Text Text Text Text Text Text Text Text
+Text Text Text Text Text Text Text Text Text Text Text Text
+======Heading 6======
+Text Text '''''Text Text Text Text Text Text''''' Text Text Text Text
+Text Text Text [http://www.wikipedia.org Wikipedia] Text Text Text
+[[File:wiki.png|alt=Puzzle globe logo]]
+
+# ''Numbered lists'' are:
+## Very organized [[File:wiki.png|alt=Puzzle globe logo]]
+## Easy to follow
+#: Previous item continues
+A new line marks the end of the list.
+# New numbering starts with 1.
+
+* ''Unordered lists'' are easy to do:
+** Start every line with a star.
+*** More stars indicate a deeper level.
+*: Previous item continues.
+** A new line [[File:wiki.png|alt=Puzzle globe logo]]
+* in a list
+marks the end of the list.
+* Of course you can start again.
+
+# ''Numbered lists'' are:
+## Very organized
+## Easy to follow
+#: Previous item continues
+A new line marks the end of the list.
+# New numbering starts with 1.
+
+----
+
+==Heading 2==
+* list item
+* list item
+* list item
+* list item
+
+# list item
+# list item
+# list item
+# list item

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="author" content="Elia Contini, elia.contini@gmail.com">
+		<title>wiki2HTML</title>
+		
+		<!--
+			wiki2HTML Parses wiki markup and generates HTML 5 showing a preview.
+		    Copyright (C) 2010-2013 Elia Contini
+		    
+		    This program is free software: you can redistribute it and/or modify
+		    it under the terms of the GNU General Public License as published by
+		    the Free Software Foundation, either version 3 of the License, or
+		    any later version.
+		    
+		    This program is distributed in the hope that it will be useful,
+		    but WITHOUT ANY WARRANTY; without even the implied warranty of
+		    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+		    GNU General Public License for more details.
+		    
+		    You should have received a copy of the GNU General Public License
+		    along with this program. If not, see http://www.gnu.org/licenses/.
+		-->
+		
+		<link rel="stylesheet" href="css/style.css" media="screen">
+	</head>
+	<body>
+		<header>
+			<h1>wiki2HTML</h1>
+		</header>
+		
+		<div id="content">
+			<div id="codePage">
+				<form action="#" method="post">
+					<fieldset>
+						<label for="code">Wiki Code:</label><br>
+						<textarea id="code" cols="65" rows="21">=You can write a title=
+
+You can insert an image [[File:anImage.png|thumb|alt=Alternative text|Caption text]], make your text '''bold''' or ''italic''.
+
+You can create an ordered list
+
+# and this is the first item
+# followed by the second one
+
+You can divide text using an horizontal rule
+----
+
+create a table
+{|
+! Header 1
+! Header 2
+! Header 3
+|-
+| row 1, cell 1
+| row 1, cell 2
+| row 1, cell 3
+|-
+| row 2, cell 1
+| row 2, cell 2
+| row 2, cell 3
+|-
+| row 3, cell 1
+| row 3, cell 2
+| row 3, cell 3
+|}
+
+or create
+==A subsection==
+
+that contains an unordered list
+
+* with an item
+* followed by the second one
+</textarea>
+					</fieldset>
+				</form>
+			</div>
+			
+			<div id="previewPage">
+				<div id="preview">
+					<p>Nothing to show</p>
+				</div>
+			</div>
+		</div>
+		
+		<nav>
+			<a href="#" class="button" title="Show the source code of the page" onclick="return appDemo.show('codePage');">Source</a> <span class="hidden">|</span>
+			<a href="#" class="button" title="Show the preview of the page" onclick="return appDemo.show('previewPage');">Preview</a>
+		</nav>
+		
+		<footer>
+			&copy; 2010-2013 - Created by <a href="http://eliacontini.info">Elia Contini</a> and released under <a href="http://www.gnu.org/licenses/gpl.html" title="Read the license [External link]" rel="license"><abbr title="Gnu is Not Unix">GNU</abbr> <abbr title="General Public License">GPL</abbr> 3</a>.
+		</footer>
+		
+		<script type="text/javascript">
+			var appDemo = {
+				_heightLim: 550, //px
+				_widthLim: 900,  //px
+				
+				_currentPage: 'codePage',
+				
+				_offset: 0,
+				_timer: null,
+				
+				_slide: function(from, to) {
+					var fromPage = document.getElementById(from);
+					var toPage = document.getElementById(to);
+					
+					if(this._offset <= this._widthLim) {
+						if(from == 'codePage') {
+							fromPage.setAttribute('style', 'z-index: 0; position: absolute; top: 0; left:0; clear: both; display: block; width:' + this._widthLim  + 'px; height:' + this._heightLim + 'px');
+							toPage.setAttribute('style', 'z-index: 10; position: absolute; top: 0; left:' + (this._widthLim - this._offset)  + 'px; clear: both; display: block; width:' + this._widthLim + 'px; height:' + this._heightLim + 'px');
+						}
+						else {
+							fromPage.setAttribute('style', 'z-index: 10; position: absolute; top: 0; left:'+ this._offset  +'px; clear: both; display: block; width:' + this._widthLim  + 'px; height:' + this._heightLim + 'px');
+							toPage.setAttribute('style', 'z-index: 0; position: absolute; top: 0; left:0; clear: both; display: block; width:' + this._widthLim + 'px; height:' + this._heightLim + 'px');
+						}
+						
+						this._offset = this._offset + 25;
+						this._timer = setTimeout("appDemo._slide('" + from + "', '" + to + "')", 1);
+					}
+					else {
+						clearTimeout(this._timer);
+						this._offset = 0;
+						this._currentPage = to;
+						fromPage.setAttribute('style', 'z-index: 0');
+						toPage.setAttribute('style', 'z-index: 10');
+					}
+				},
+				
+				show: function(what) {
+					if(what == 'previewPage' && what != this._currentPage) {
+						var wikicode = document.getElementById('code').value;
+						var preview = document.getElementById('preview');
+	
+						var html = wiki2html.parse(wikicode);
+						
+						preview.innerHTML = html;
+						
+						this._slide('codePage', 'previewPage');
+					}
+					else if(what == 'codePage' && what != this._currentPage)
+						this._slide('previewPage', 'codePage');
+						
+					return false;
+				}
+			};
+		</script>
+		<script type="text/javascript" src="js/wiki2html.js"></script>
+	</body>
+</html>

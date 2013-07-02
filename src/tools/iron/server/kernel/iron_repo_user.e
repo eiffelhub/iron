@@ -1,0 +1,122 @@
+note
+	description : "Objects that ..."
+	author      : "$Author: jfiat $"
+	date        : "$Date: 2013-05-30 12:11:30 +0200 (jeu., 30 mai 2013) $"
+	revision    : "$Revision: 92634 $"
+
+class
+	IRON_REPO_USER
+
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make (u: like name)
+			-- Initialize `Current'.
+		do
+			name := u
+		end
+
+feature -- Access
+
+	name: READABLE_STRING_32
+
+	password: detachable READABLE_STRING_32
+
+	email: detachable READABLE_STRING_32
+
+	is_administrator: BOOLEAN
+			-- Is considered as administrator?
+
+	roles: detachable LIST [IRON_REPO_USER_ROLE]
+			-- Associated user roles.
+
+feature -- Status report
+
+	same_user (other: IRON_REPO_USER): BOOLEAN
+			-- Is other same user as Current?
+		do
+			Result := name.is_case_insensitive_equal (other.name)
+		end
+
+feature -- Change
+
+	set_password (p: like password)
+		do
+			password := p
+		end
+
+	set_email (v: like email)
+		do
+			email := v
+		end
+
+	set_is_administrator (b: BOOLEAN)
+		do
+			is_administrator := b
+		end
+
+	add_role (r: IRON_REPO_USER_ROLE)
+		local
+			l_roles: like roles
+		do
+			l_roles := roles
+			if l_roles = Void then
+				create {ARRAYED_LIST [IRON_REPO_USER_ROLE]} l_roles.make (1)
+				roles := l_roles
+			end
+			l_roles.extend (r)
+			if
+				r.name.is_case_insensitive_equal ("admin") or
+				r.name.is_case_insensitive_equal ("administrator")
+			then
+				is_administrator := True
+			end
+		end
+
+	remove_role (r: IRON_REPO_USER_ROLE)
+		local
+			l_roles: like roles
+		do
+			l_roles := roles
+			if l_roles /= Void then
+				l_roles.prune_all (r)
+			end
+			if r.name.is_case_insensitive_equal ("admin") then
+				is_administrator := False
+			end
+		end
+
+note
+	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options: "http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+			
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+			
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful, but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the GNU General Public License for more details.
+			
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+		]"
+	source: "[
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
+		]"
+end
