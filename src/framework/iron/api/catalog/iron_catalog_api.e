@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CATALOG_API}."
 	author: ""
-	date: "$Date: 2013-05-28 15:11:27 +0200 (mar., 28 mai 2013) $"
-	revision: "$Revision: 92611 $"
+	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92773 $"
 
 class
 	IRON_CATALOG_API
@@ -101,14 +101,14 @@ feature -- Access: package
 
 feature -- Operations
 
-	download_package (a_package: IRON_PACKAGE)
+	download_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
 		do
-			catalog.download_package (a_package)
+			catalog.download_package (a_package, ignoring_cache)
 		end
 
-	install_package (a_package: IRON_PACKAGE)
+	install_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
 		do
-			catalog.install_package (a_package)
+			catalog.install_package (a_package, ignoring_cache)
 		end
 
 	uninstall_package (a_package: IRON_PACKAGE)

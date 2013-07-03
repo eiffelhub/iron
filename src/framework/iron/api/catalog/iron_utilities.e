@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_UTILITIES}."
 	author: ""
-	date: "$Date: 2013-05-28 15:11:27 +0200 (mar., 28 mai 2013) $"
-	revision: "$Revision: 92611 $"
+	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92773 $"
 
 class
 	IRON_UTILITIES

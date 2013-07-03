@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INSTALL_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-30 13:53:45 +0200 (jeu., 30 mai 2013) $"
-	revision: "$Revision: 92635 $"
+	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92771 $"
 
 deferred class
 	IRON_INSTALL_ARGUMENTS
@@ -14,6 +14,11 @@ feature -- Access
 
 	installing_all: BOOLEAN
 			-- Install all available packages?
+		deferred
+		end
+
+	ignoring_cache: BOOLEAN
+			-- Ignore cache and always redownload the archive?
 		deferred
 		end
 

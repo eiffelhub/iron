@@ -1,7 +1,7 @@
 note
 	description: "IRON Configuration filter."
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92771 $"
 
 class
 	IRON_CONFIGURATION_FILTER

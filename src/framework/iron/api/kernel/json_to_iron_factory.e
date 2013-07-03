@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {JSON_TO_IRON_FACTORY}."
 	author: ""
-	date: "$Date: 2013-05-20 16:08:24 +0200 (lun., 20 mai 2013) $"
-	revision: "$Revision: 92550 $"
+	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92773 $"
 
 class
 	JSON_TO_IRON_FACTORY

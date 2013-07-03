@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-05-24 20:33:43 +0200 (ven., 24 mai 2013) $"
-	revision    : "$Revision: 92595 $"
+	date        : "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision    : "$Revision: 92773 $"
 
 class
 	IRON_PACKAGE

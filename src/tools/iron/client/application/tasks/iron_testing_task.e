@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_TESTING_TASK}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92771 $"
 
 class
 	IRON_TESTING_TASK
@@ -69,7 +69,7 @@ feature -- Execute
 					lst as p
 				loop
 					print ("* Download ["+ p.item.human_identifier +"] ==%N")
-					a_iron.catalog_api.download_package (p.item)
+					a_iron.catalog_api.download_package (p.item, True)
 				end
 			end
 			if not lst.is_empty then
@@ -77,7 +77,7 @@ feature -- Execute
 					lst as p
 				loop
 					print ("* Install ["+ p.item.human_identifier +"] ==%N")
-					a_iron.catalog_api.install_package (p.item)
+					a_iron.catalog_api.install_package (p.item, True)
 				end
 			end
 

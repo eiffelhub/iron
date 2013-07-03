@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INSTALLATION_API}."
 	author: ""
-	date: "$Date: 2013-06-05 17:10:12 +0200 (mer., 05 juin 2013) $"
-	revision: "$Revision: 92670 $"
+	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92773 $"
 
 class
 	IRON_INSTALLATION_API

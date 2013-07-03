@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_API_CONSTANTS}."
 	author: ""
-	date: "$Date: 2013-05-23 22:01:55 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92586 $"
+	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92773 $"
 
 class
 	IRON_API_CONSTANTS

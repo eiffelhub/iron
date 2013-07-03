@@ -14,8 +14,8 @@ note
 
 		]"
 	author: ""
-	date: "$Date: 2013-05-30 13:53:45 +0200 (jeu., 30 mai 2013) $"
-	revision: "$Revision: 92635 $"
+	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
+	revision: "$Revision: 92771 $"
 
 class
 	IRON_INSTALL_ARGUMENT_PARSER
@@ -52,6 +52,12 @@ feature -- Access
 			-- Install all available packages?
 		do
 			Result := has_option (all_switch)
+		end
+
+	ignoring_cache: BOOLEAN
+			-- <Precursor>
+		do
+			Result := has_option (no_cache_switch)
 		end
 
 	resources: LIST [IMMUTABLE_STRING_32]
@@ -115,6 +121,7 @@ feature {NONE} -- Switches
 			create Result.make (2)
 			Result.extend (create {ARGUMENT_SWITCH}.make (file_switch, "Package file", True, True))
 			Result.extend (create {ARGUMENT_SWITCH}.make (all_switch, "Install all available packages", True, False))
+			Result.extend (create {ARGUMENT_SWITCH}.make (no_cache_switch, "Ignore cache and always download iron package.", True, False))
 			add_verbose_switch (Result)
 			add_simulation_switch (Result)
 			add_batch_interactive_switch (Result)
@@ -122,6 +129,7 @@ feature {NONE} -- Switches
 
 	file_switch: STRING = "f|file"
 	all_switch: STRING = "a|all"
+	no_cache_switch: STRING = "no_cache"
 
 ;note
 	copyright:	"Copyright (c) 1984-2013, Eiffel Software"
