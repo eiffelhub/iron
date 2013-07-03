@@ -23,9 +23,9 @@
 				<assertions precondition="true" postcondition="true"/>
 			</option>
 		</library>
-		<library name="iron_api" location="$EIFFEL_SRC\framework\iron\api\iron_api-safe.ecf" readonly="false"/>
-		<library name="iron_catalog_api" location="$EIFFEL_SRC\framework\iron\api\iron_catalog_api-safe.ecf" readonly="false"/>
-		<library name="iron_installation_api" location="$EIFFEL_SRC\framework\iron\api\iron_installation_api-safe.ecf" readonly="false"/>
+		<library name="iron_api" location="..\..\..\framework\iron\api\iron_api-safe.ecf" readonly="false"/>
+		<library name="iron_catalog_api" location="..\..\..\framework\iron\api\iron_catalog_api-safe.ecf" readonly="false"/>
+		<library name="iron_installation_api" location="..\..\..\framework\iron\api\iron_installation_api-safe.ecf" readonly="false"/>
 		<library name="json" location="$ISE_LIBRARY\contrib\library\text\parser\json\library\json-safe.ecf"/>
 		<library name="message_digest" location="$ISE_LIBRARY\unstable\library\text\encryption\message_digest\message_digest-safe.ecf"/>
 		<library name="process" location="$ISE_LIBRARY\library\process\process-safe.ecf"/>
@@ -38,7 +38,7 @@
 		<root class="ES_IRON_CLIENT" feature="make"/>
 		<setting name="console_application" value="true"/>
 		<setting name="executable_name" value="iron"/>
-		<library name="environment" location="$EIFFEL_SRC\framework\environment\environment-safe.ecf"/>
+		<library name="environment" location="..\..\..\framework\environment\environment-safe.ecf"/>
 		<cluster name="es_application" location=".\es_application\" recursive="true"/>
 	</target>
 </system>
