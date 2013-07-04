@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {ACCESS_HANDLER}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2013-07-04 13:40:56 +0200 (jeu., 04 juil. 2013) $"
+	revision: "$Revision: 92779 $"
 
 class
 	ACCESS_HANDLER
@@ -85,7 +85,7 @@ feature -- Execution
 					m.set_location (l_redir.value)
 				end
 
-				m.set_title ("Administration")
+				m.set_title ("Information")
 				m.set_body (s)
 				res.send (m)
 			else
