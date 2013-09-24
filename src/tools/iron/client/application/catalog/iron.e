@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
+	revision: "$Revision: 92997 $"
 
 class
 	IRON
@@ -15,13 +15,17 @@ feature {NONE} -- Initialization
 	make (a_layout: IRON_LAYOUT)
 		do
 			layout := a_layout
-			create installation_api.make_with_layout (a_layout)
-			create catalog_api.make_with_layout (a_layout)
+			create urls
+			create installation_api.make_with_layout (a_layout, urls)
+			create catalog_api.make_with_layout (a_layout, urls)
 		end
 
 feature -- Access
 
 	layout: IRON_LAYOUT
+
+	urls: IRON_URL_BUILDER
+			-- IRON url builder.
 
 	installation_api: IRON_INSTALLATION_API
 
@@ -58,4 +62,5 @@ feature -- Access
 			Website http://www.eiffel.com
 			Customer support http://support.eiffel.com
 		]"
+
 end

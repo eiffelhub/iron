@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CATALOG_API}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
+	revision: "$Revision: 92997 $"
 
 class
 	IRON_CATALOG_API
@@ -21,7 +21,7 @@ feature {NONE} -- Initialization
 	initialize
 		do
 			Precursor
-			create {IRON_FS_CATALOG} catalog.make (layout)
+			create {IRON_FS_CATALOG} catalog.make (layout, urls)
 		end
 
 	catalog: IRON_CATALOG
@@ -148,4 +148,5 @@ note
 			Website http://www.eiffel.com
 			Customer support http://support.eiffel.com
 		]"
+		
 end

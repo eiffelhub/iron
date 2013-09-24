@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {INI_FILE}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2013-09-24 14:47:07 +0200 (mar., 24 sept. 2013) $"
+	revision: "$Revision: 92991 $"
 
 class
 	INI_FILE
@@ -105,7 +105,7 @@ feature {NONE} -- Implementation
 			utf: UTF_CONVERTER
 		do
 			create f.make_with_path (p)
-			if f.exists and then f.is_access_readable then
+			if f.exists and then not f.is_directory and then f.is_access_readable then
 				f.open_read
 				from
 				until
@@ -171,4 +171,5 @@ feature {NONE} -- Implementation
 			Website http://www.eiffel.com
 			Customer support http://support.eiffel.com
 		]"
+		
 end

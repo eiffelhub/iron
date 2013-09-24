@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision    : "$Revision: 92585 $"
+	date        : "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
+	revision    : "$Revision: 92997 $"
 
 class
 	IRON_REPO_CONTROLLER_USER_TASK
@@ -71,6 +71,7 @@ feature -- Execution
 			u.set_password (p)
 			u.set_email (e)
 			iron.database.update_user (u)
+			iron.notify_user_updated (u, True)
 		end
 
 

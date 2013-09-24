@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_REPO_HANDLER}."
 	author: ""
-	date: "$Date: 2013-07-03 23:16:08 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92777 $"
+	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
+	revision: "$Revision: 92997 $"
 
 deferred class
 	IRON_REPO_HANDLER
@@ -426,10 +426,10 @@ feature -- Factory
 			Result.set_iron_version (iron_version (req))
 			if attached current_user (req) as u then
 				Result.add_menu ("Home", iron.page (Void, ""))
-				Result.add_menu ("Account (" + u.name + ")", iron.page (Void, ""))
+				Result.add_menu ("Account (" + u.name + ")", iron.page (Void, "/user"))
 			else
 				Result.add_menu ("Home", iron.page (Void, ""))
-				Result.add_menu ("Account", iron.page (Void, "/account"))
+				Result.add_menu ("Account", iron.page (Void, "/user"))
 			end
 			if has_iron_version (req) then
 				Result.add_menu ("List of packages", iron.package_list_web_page (iron_version (req)))
