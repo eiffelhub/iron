@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NAMES}."
 	author: ""
-	date: "$Date: 2013-06-05 17:10:12 +0200 (mer., 05 juin 2013) $"
-	revision: "$Revision: 92670 $"
+	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93491 $"
 
 class
 	IRON_NAMES
@@ -88,7 +88,7 @@ feature -- Repository task
 		do Result := string_with_args ("Registering repository %"$1%" [$2] ", [a_name, a_url]) end
 
 	m_unregistering_repository (a_name_or_uri: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Un-Registering repository [$2] ", [a_name_or_uri]) end
+		do Result := string_with_args ("Un-Registering repository [$1] ", [a_name_or_uri]) end
 
 feature {NONE} -- Implementation
 

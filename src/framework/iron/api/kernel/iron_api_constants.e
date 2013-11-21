@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_API_CONSTANTS}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93492 $"
 
 class
 	IRON_API_CONSTANTS
@@ -13,13 +13,34 @@ feature -- Access
 
 	version_variable_name: STRING = "IRON_VERSION"
 
+feature -- Access: header
+
+	iron_http_header_name: STRING = "Iron_Version"
+
+feature -- Access: network related
+
+	iron_proxy_variable_name: STRING = "IRON_PROXY"
+			-- Proxy if any as "hostname:port"
+			--| ex for fiddler debugging: "localhost:8888"
+			-- see {IRON_REMOTE_NODE} for usage
+
+	iron_connect_timeout_variable_name: STRING = "IRON_CONNECT_TIMEOUT"
+			-- Environment variable allowing to set the "connect timeout" setting
+			-- for http client communication with the iron server
+			-- see {IRON_REMOTE_NODE} for usage
+
+	iron_timeout_variable_name: STRING = "IRON_TIMEOUT"
+			-- Environment variable allowing to set the "timeout" setting
+			-- for http client communication with the iron server
+			-- see {IRON_REMOTE_NODE} for usage
+
 feature -- Version	
 
 	major: NATURAL_16 = 0
 
 	minor: NATURAL_16 = 1
 
-	built: STRING = "0006"
+	built: STRING = "0007"
 
 	version: IMMUTABLE_STRING_8
 		local

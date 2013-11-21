@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON}."
 	author: ""
-	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
-	revision: "$Revision: 92997 $"
+	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93491 $"
 
 class
 	IRON
@@ -30,6 +30,11 @@ feature -- Access
 	installation_api: IRON_INSTALLATION_API
 
 	catalog_api: IRON_CATALOG_API
+
+	api_version: IMMUTABLE_STRING_8
+		once
+			Result := (create {IRON_API_CONSTANTS}).version
+		end
 
 ;note
 	copyright: "Copyright (c) 1984-2013, Eiffel Software"

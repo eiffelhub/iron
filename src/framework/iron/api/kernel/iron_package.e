@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision    : "$Revision: 92773 $"
+	date        : "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
+	revision    : "$Revision: 93492 $"
 
 class
 	IRON_PACKAGE
@@ -30,6 +30,7 @@ feature {NONE} -- Initialization
 			repository := repo
 			create id.make_from_string (a_id)
 			create associated_paths.make (0)
+			create tags.make (0)
 		end
 
 feature -- Status
@@ -122,6 +123,9 @@ feature -- Access
 
 	associated_paths: ARRAYED_LIST [READABLE_STRING_8]
 			-- Associated path on the repositories
+
+	tags: ARRAYED_LIST [READABLE_STRING_32]
+			-- Tags
 
 feature -- Access: items	
 

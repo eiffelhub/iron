@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {JSON_TO_IRON_FACTORY}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93492 $"
 
 class
 	JSON_TO_IRON_FACTORY
@@ -92,6 +92,15 @@ feature {NONE} -- Implementation
 					loop
 						if attached {JSON_STRING} c.item as js then
 							Result.associated_paths.force (js.item)
+						end
+					end
+				end
+				if attached {JSON_ARRAY} j_package.item ("tags") as j_tags then
+					across
+						j_tags.array_representation as c
+					loop
+						if attached {JSON_STRING} c.item as js then
+							Result.tags.force (js.item)
 						end
 					end
 				end

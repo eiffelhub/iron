@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_UTILITIES}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93492 $"
 
 class
 	IRON_UTILITIES
@@ -140,8 +140,17 @@ feature -- Archiving
 		end
 
 	extract_package_archive (a_package: IRON_PACKAGE; a_target_folder: PATH; a_create_dir_if_missing: BOOLEAN; a_layout: IRON_LAYOUT)
+			-- Extract package's archive into `a_target_folder'
 		require
 			a_package.has_archive_file_uri
+		do
+			if attached a_package.archive_path as l_archive_path then
+				extract_package_archive_file (l_archive_path, a_target_folder, a_create_dir_if_missing, a_layout)
+			end
+		end
+
+	extract_package_archive_file (a_archive_path: PATH; a_target_folder: PATH; a_create_dir_if_missing: BOOLEAN; a_layout: IRON_LAYOUT)
+			-- Extract `a_archive_path' into `a_target_folder'
 		local
 			d: DIRECTORY
 			proc_fact: PROCESS_FACTORY
@@ -159,27 +168,25 @@ feature -- Archiving
 				d.recursive_create_dir
 			end
 
-			if attached a_package.archive_path as l_archive_path then
-				create proc_fact
-				cmd := extract_package_archive_command (l_archive_path, p, a_layout)
-				debug
-					print (cmd + "%N")
-				end
-				proc := proc_fact.process_launcher_with_command_line (cmd, p.name)
-				proc.redirect_output_to_file (p.extended (".tmp.output.proc").name)
-				proc.redirect_error_to_same_as_output
-				proc.launch
-				if proc.launched then
-					proc.wait_for_exit
-					if not proc.last_termination_successful then
-						-- failure
-					end
-				else
+			create proc_fact
+			cmd := extract_package_archive_command (a_archive_path, p, a_layout)
+			debug
+				print (cmd + "%N")
+			end
+			proc := proc_fact.process_launcher_with_command_line (cmd, p.name)
+			proc.redirect_output_to_file (p.extended (".tmp.output.proc").name)
+			proc.redirect_error_to_same_as_output
+			proc.launch
+			if proc.launched then
+				proc.wait_for_exit
+				if not proc.last_termination_successful then
 					-- failure
 				end
-				create f.make_with_path (p.extended (".tmp.output.proc"))
-				delete_file (f)
+			else
+				-- failure
 			end
+			create f.make_with_path (p.extended (".tmp.output.proc"))
+			delete_file (f)
 		end
 
 	delete_file (f: FILE)

@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CONSTANTS}."
 	author: ""
-	date: "$Date: 2013-05-23 22:01:55 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92586 $"
+	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93491 $"
 
 class
 	IRON_CONSTANTS
@@ -19,7 +19,7 @@ feature -- Version
 
 	minor: NATURAL_16 = 1
 
-	built: STRING = "0006"
+	built: STRING = "0007"
 
 	version: IMMUTABLE_STRING_8
 		local

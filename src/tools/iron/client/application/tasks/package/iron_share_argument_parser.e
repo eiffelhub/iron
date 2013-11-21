@@ -2,11 +2,11 @@ note
 	description: "[
 			Summary description for {IRON_SHARE_ARGUMENT_PARSER}.
 						
-				iron package {create|update|delete} --user username --pwd password --repository http://iron.eiffel.com/7.3 --data data_file
+				iron package {create|update|delete} --user username --pwd password --repository http://iron.eiffel.com/13.11 --data data_file
 		]"
 	author: ""
-	date: "$Date: 2013-05-30 13:53:45 +0200 (jeu., 30 mai 2013) $"
-	revision: "$Revision: 92635 $"
+	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
+	revision: "$Revision: 93491 $"
 
 class
 	IRON_SHARE_ARGUMENT_PARSER
