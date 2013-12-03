@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_DATABASE}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-11-27 14:17:51 +0100 (mer., 27 nov. 2013) $"
+	revision: "$Revision: 93555 $"
 
 deferred class
 	IRON_NODE_DATABASE
@@ -52,6 +52,24 @@ feature -- Package
 
 	package (a_id: READABLE_STRING_GENERAL): detachable IRON_NODE_PACKAGE
 		deferred
+		end
+
+	package_by_name (a_name: READABLE_STRING_GENERAL): detachable IRON_NODE_PACKAGE
+			-- Package named `a_name'.
+		do
+			if attached packages (1, 0) as lst then
+				across
+					lst as ic
+				until
+					Result /= Void
+				loop
+					if ic.item.is_named (a_name) then
+						Result := ic.item
+					end
+				end
+			end
+		ensure
+			Result /= Void implies Result.is_named (a_name)
 		end
 
 	packages (a_lower, a_upper: INTEGER): detachable LIST [IRON_NODE_PACKAGE]

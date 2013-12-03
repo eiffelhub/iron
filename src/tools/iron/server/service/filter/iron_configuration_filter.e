@@ -1,7 +1,7 @@
 note
 	description: "IRON Configuration filter."
-	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92771 $"
+	date: "$Date: 2013-12-03 10:19:07 +0100 (mar., 03 déc. 2013) $"
+	revision: "$Revision: 93603 $"
 
 class
 	IRON_CONFIGURATION_FILTER
@@ -29,11 +29,29 @@ feature -- Basic operations
 
 	execute (req: WSF_REQUEST; res: WSF_RESPONSE)
 			-- Execute the filter
+		local
+			ut: FILE_UTILITIES
+			s: STRING
+			l_continue: BOOLEAN
 		do
+			l_continue := True
 			if attached uploaded_file_path as p then
-				req.set_uploaded_file_path (p)
+				if ut.directory_path_exists (p) then
+					req.set_uploaded_file_path (p)
+				else
+					res.set_status_code ({HTTP_STATUS_CODE}.internal_server_error)
+					s := "tmp folder is missing %"" + p.utf_8_name + "%""
+					res.put_header_line ("Content-Length:" + s.count.out)
+					res.put_header_line ("Content-Type:text/plain")
+					res.add_header_line ("X-Iron-Debug: uploadpath=" + p.utf_8_name)
+
+					res.put_string (s)
+					l_continue := False
+				end
 			end
-			execute_next (req, res)
+			if l_continue then
+				execute_next (req, res)
+			end
 		end
 
 note

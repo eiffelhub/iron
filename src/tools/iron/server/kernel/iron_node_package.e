@@ -2,8 +2,8 @@ note
 	description: "[
 				This represents a package on the iron node (i.e server)
 			]"
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-11-27 14:17:51 +0100 (mer., 27 nov. 2013) $"
+	revision: "$Revision: 93555 $"
 
 class
 	IRON_NODE_PACKAGE
@@ -87,6 +87,12 @@ feature -- Tags
 	tags: LIST [READABLE_STRING_32]
 
 feature -- Access: archive
+
+	is_named (a_name: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is Current package named `a_name' ?
+		do
+			Result := attached name as n and then a_name.is_case_insensitive_equal (n)
+		end
 
 	has_archive: BOOLEAN
 --		do

@@ -244,7 +244,7 @@ feature -- Operation
 				if attached res.error_message as errmsg then
 					last_operation_error_message := "[Error] archive uploading failed!%N" + errmsg
 				else
-					last_operation_error_message := "[Error] archive uploading failed!"
+					last_operation_error_message := "[Error] archive uploading failed [" + res.status.out+ "]!"
 				end
 			elseif res.status = 401 then
 				last_operation_succeed := False

@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_FS_DATABASE}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-11-27 11:06:04 +0100 (mer., 27 nov. 2013) $"
+	revision: "$Revision: 93552 $"
 
 class
 	IRON_NODE_FS_DATABASE
@@ -1020,7 +1020,7 @@ feature {NONE} -- Implementation: maps
 			f: RAW_FILE
 			utf: UTF_CONVERTER
 			s: STRING_8
-			l_id: detachable READABLE_STRING_8
+			l_id: detachable IMMUTABLE_STRING_8
 		do
 			create f.make_with_path (packages_version_index_map_path (v))
 			if f.exists and f.is_access_readable then
@@ -1042,7 +1042,7 @@ feature {NONE} -- Implementation: maps
 							end
 						else
 							s.right_adjust
-							l_id := s
+							create l_id.make_from_string (s)
 						end
 						f.read_line_thread_aware
 					end
