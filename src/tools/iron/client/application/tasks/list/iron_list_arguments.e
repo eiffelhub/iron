@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_LIST_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
+	revision: "$Revision: 94640 $"
 
 deferred class
 	IRON_LIST_ARGUMENTS
@@ -16,8 +16,13 @@ feature -- Access
 		deferred
 		end
 
+	only_conflicts: BOOLEAN
+			-- List only package that has conflict.
+		deferred
+		end
+
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

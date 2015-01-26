@@ -2,8 +2,8 @@ note
 	description: "[
 			Objects that access the remote iron server node.
 		]"
-	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93492 $"
+	date: "$Date: 2015-01-23 00:34:09 +0100 (ven., 23 janv. 2015) $"
+	revision: "$Revision: 96525 $"
 
 class
 	IRON_REMOTE_NODE
@@ -12,15 +12,16 @@ inherit
 	SHARED_EXECUTION_ENVIRONMENT
 
 create
-	make
+	make_with_repository
 
 feature {NONE} -- Initialization
 
-	make (a_urls: IRON_URL_BUILDER; a_api_version: IMMUTABLE_STRING_8)
+	make_with_repository (a_urls: IRON_URL_BUILDER; a_api_version: IMMUTABLE_STRING_8; a_repo: IRON_WEB_REPOSITORY)
 			-- Initialize `Current'.
 		do
 			urls := a_urls
 			api_version := a_api_version
+			repository := a_repo
 		end
 
 	urls: IRON_URL_BUILDER
@@ -29,41 +30,39 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	packages (a_repo: IRON_REPOSITORY): detachable LIST [IRON_PACKAGE]
+	repository: IRON_WEB_REPOSITORY
+
+	packages: detachable LIST [IRON_PACKAGE]
 		local
 			sess: like new_session
 			res: HTTP_CLIENT_RESPONSE
 			f: JSON_TO_IRON_FACTORY
 		do
-			sess := new_session (a_repo.uri.string)
-			res := sess.get (urls.path_package_list (a_repo), Void)
+			last_operation_succeed := False
+			last_operation_error_message := Void
+			sess := new_session (repository.server_uri.string)
+			res := sess.get (urls.path_package_list (repository), Void)
 			if res.error_occurred then
-				if not is_silent then
-					print ("ERROR: connection%N")
-				end
+				last_operation_succeed := False
+				last_operation_error_message := "ERROR: connection failed"
 			elseif attached res.body as l_body then
+				last_operation_succeed := True
 				create {ARRAYED_LIST [IRON_PACKAGE]} Result.make (5)
 				create f
-				if attached f.json_to_packages (l_body, a_repo) as lst then
+				if attached f.json_to_packages (l_body, repository) as lst then
 					across
 						lst as p
 					loop
 						Result.force (p.item)
-						if not is_silent then
-							print ("- ")
-							print (p.item.human_identifier)
-							print ("%N")
-						end
 					end
-				end
-				if not is_silent and then Result.is_empty then
-					print ("ERROR: invalid data!%N")
+				else
+					last_operation_succeed := False
+					last_operation_error_message := "ERROR: invalid package data"
 					Result := Void
 				end
 			else
-				if not is_silent then
-					print ("ERROR: empty%N")
-				end
+				last_operation_succeed := False
+				last_operation_error_message := "ERROR: empty response body"
 			end
 		end
 
@@ -134,21 +133,23 @@ feature -- Operation
 
 	last_operation_error_message: detachable READABLE_STRING_8
 
-	publish_package (a_id, a_name, a_description: detachable READABLE_STRING_32;
-				a_archive_path: detachable PATH;
-				a_repo: IRON_REPOSITORY; a_package: detachable IRON_PACKAGE;
+	publish_package (a_id, a_name, a_title, a_description: detachable READABLE_STRING_32;
+				a_package: detachable IRON_PACKAGE; a_published_package_cell: detachable CELL [detachable IRON_PACKAGE];
 				a_user, a_password: READABLE_STRING_32)
+		require
+			same_repository: a_package /= Void implies repository.is_same_repository (a_package.repository)
 		local
 			sess: like new_auth_session
 			ctx: HTTP_CLIENT_REQUEST_CONTEXT
 			res: HTTP_CLIENT_RESPONSE
+			f: JSON_TO_IRON_FACTORY
 		do
 			last_operation_succeed := False
 			last_operation_error_message := Void
-			if a_package = Void then
-				sess := new_auth_session (a_repo.uri.string, a_user, a_password)
-			else
-				sess := new_auth_session (a_package.repository.uri.string, a_user, a_password)
+			sess := new_auth_session (repository.server_uri.string, a_user, a_password)
+			if a_package /= Void then
+				check same_repo: repository.is_same_repository (a_package.repository) end
+--				sess := new_auth_session (a_package.repository.remote_repository.server_uri.string, a_user, a_password)
 			end
 			sess.set_timeout (0) -- never timeout
 			create ctx.make_with_credentials_required
@@ -158,13 +159,17 @@ feature -- Operation
 			if a_name /= Void then
 				ctx.add_form_parameter ("name", a_name)
 			end
+			if a_title /= Void then
+				ctx.add_form_parameter ("title", a_title)
+			end
 			if a_description /= Void then
 				ctx.add_form_parameter ("description", a_description)
 			end
 			if a_package = Void then
-				res := sess.post (urls.path_create_package (a_repo), ctx, Void)
+				res := sess.post (urls.path_create_package (repository), ctx, Void)
 			else
-				res := sess.post (urls.path_update_package (a_package.repository, a_package), ctx, Void)
+				res := sess.post (urls.path_update_package (repository, a_package), ctx, Void)
+--				res := sess.post (urls.path_update_package (a_package.repository.remote_repository, a_package), ctx, Void)				
 			end
 			if res.error_occurred then
 				last_operation_succeed := False
@@ -175,9 +180,25 @@ feature -- Operation
 				end
 			elseif res.status = 401 then
 				last_operation_succeed := False
-				last_operation_error_message := "[Error] Publish package not authorized!"
+				if attached res.body as l_body then
+					last_operation_error_message := "[Error] Publish package not authorized!" + l_body
+				else
+					last_operation_error_message := "[Error] Publish package not authorized!"
+				end
+			elseif res.status = 500 then
+				last_operation_succeed := False
+				last_operation_error_message := "[Error] Server reported internal error!"
 			else
 				last_operation_succeed := True
+				if
+					a_published_package_cell /= Void and then
+					attached res.body as l_body
+				then
+					create f
+					if attached f.json_to_package_within_repository (l_body, repository) as l_package then
+						a_published_package_cell.replace (l_package)
+					end
+				end
 			end
 			debug
 				if attached res.body as l_body then
@@ -192,6 +213,7 @@ feature -- Operation
 			a_user, a_password: READABLE_STRING_32)
 		require
 			a_package_has_id: a_package.has_id
+			same_repository: repository.is_same_repository (a_package.repository)
 		local
 			sess: like new_auth_session
 			ctx: HTTP_CLIENT_REQUEST_CONTEXT
@@ -199,7 +221,7 @@ feature -- Operation
 		do
 			last_operation_succeed := False
 			last_operation_error_message := Void
-			sess := new_auth_session (a_package.repository.uri.string, a_user, a_password)
+			sess := new_auth_session (repository.server_uri.string, a_user, a_password)
 			create ctx.make_with_credentials_required
 			ctx.add_form_parameter ("id", a_package.id.to_string_32)
 			across
@@ -207,7 +229,7 @@ feature -- Operation
 			loop
 				ctx.add_form_parameter ("map[]", ic.item.to_string_8)
 			end
-			res := sess.post (urls.path_add_package_index (a_package.repository, a_package), ctx, Void)
+			res := sess.post (urls.path_add_package_index (repository, a_package), ctx, Void)
 			if res.error_occurred then
 				last_operation_succeed := False
 				if attached res.error_message as errmsg then
@@ -223,9 +245,10 @@ feature -- Operation
 			end
 		end
 
-	upload_package_archive (a_package: IRON_PACKAGE; a_archive_path: PATH; a_user, a_password: READABLE_STRING_32)
+	upload_package_archive (a_package: IRON_PACKAGE; a_archive: IRON_ARCHIVE; a_user, a_password: READABLE_STRING_32; a_out_body: detachable CELL [detachable READABLE_STRING_8])
 		require
 			a_package_has_id: a_package.has_id
+			same_repository: repository.is_same_repository (a_package.repository)
 		local
 			sess: like new_auth_session
 			ctx: HTTP_CLIENT_REQUEST_CONTEXT
@@ -233,12 +256,15 @@ feature -- Operation
 		do
 			last_operation_succeed := False
 			last_operation_error_message := Void
-			sess := new_auth_session (a_package.repository.uri.string, a_user, a_password)
+			sess := new_auth_session (repository.server_uri.string, a_user, a_password)
 			create ctx.make_with_credentials_required
-			ctx.set_upload_filename (a_archive_path.name)
+			ctx.set_upload_filename (a_archive.path.name)
 			ctx.add_header ("Content-Type", "application/zip")
 			sess.set_timeout (0) -- Never timeout ...
-			res := sess.post (urls.path_upload_package_archive (a_package.repository, a_package), ctx, Void)
+			res := sess.post (urls.path_upload_package_archive (repository, a_package), ctx, Void)
+			if a_out_body /= Void then
+				a_out_body.replace (res.body)
+			end
 			if res.error_occurred then
 				last_operation_succeed := False
 				if attached res.error_message as errmsg then
@@ -249,7 +275,11 @@ feature -- Operation
 			elseif res.status = 401 then
 				last_operation_succeed := False
 				last_operation_error_message := "[Error] archive uploading not authorized!"
+			elseif res.status = 404 then
+				last_operation_succeed := False
+				last_operation_error_message := "[Error] package not found!"
 			else
+					--| TODO: check conherence of size and hash value.
 				last_operation_succeed := True
 			end
 			ctx.set_upload_filename (Void)
@@ -259,6 +289,8 @@ feature -- Operation
 			-- Delete package `a_package' using credential `a_user:a_password'
 			-- Set `last_operation_succeed' and `last_operation_error_message'
 			--  accordingly with operation result.
+		require
+			same_repository: repository.is_same_repository (a_package.repository)
 		local
 			sess: like new_auth_session
 			ctx: HTTP_CLIENT_REQUEST_CONTEXT
@@ -266,9 +298,9 @@ feature -- Operation
 		do
 			last_operation_succeed := False
 			last_operation_error_message := Void
-			sess := new_auth_session (a_package.repository.uri.string, a_user, a_password)
+			sess := new_auth_session (repository.server_uri.string, a_user, a_password)
 			create ctx.make_with_credentials_required
-			res := sess.delete (urls.path_package_delete (a_package.repository, a_package), ctx)
+			res := sess.delete (urls.path_package_delete (repository, a_package), ctx)
 			if res.error_occurred then
 				last_operation_succeed := False
 				if attached res.error_message as errmsg then
@@ -282,17 +314,6 @@ feature -- Operation
 			else
 				last_operation_succeed := True
 			end
-		end
-
-feature -- Status report
-
-	is_silent: BOOLEAN
-
-feature -- Change
-
-	set_is_silent (b: BOOLEAN)
-		do
-			is_silent := b
 		end
 
 feature {NONE} -- Implementation
@@ -320,7 +341,7 @@ feature {NONE} -- Implementation
 
 			Result.set_connect_timeout (connect_timeout (30)) -- connect timeout: 10 seconds
 			Result.set_timeout (timeout (60)) -- timeout = 60 seconds
-			Result.set_is_insecure (False)
+			Result.set_is_insecure (True)
 			Result.add_header ("Accept", "application/json")
 			Result.add_header ({IRON_API_CONSTANTS}.iron_http_header_name, api_version)
 		end
@@ -386,7 +407,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INSTALL_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92771 $"
+	date: "$Date: 2014-05-26 16:22:07 +0200 (lun., 26 mai 2014) $"
+	revision: "$Revision: 95178 $"
 
 deferred class
 	IRON_INSTALL_ARGUMENTS
@@ -17,8 +17,18 @@ feature -- Access
 		deferred
 		end
 
+	setup_execution_enabled: BOOLEAN
+			-- Allowing execution of scripts during installation?
+		deferred
+		end
+
 	ignoring_cache: BOOLEAN
 			-- Ignore cache and always redownload the archive?
+		deferred
+		end
+
+	dependencies_included: BOOLEAN
+			-- Include the dependencies?
 		deferred
 		end
 
@@ -30,8 +40,20 @@ feature -- Access
 		deferred
 		end
 
+	for_ecf_file: detachable PATH
+			-- Install package for ecf `Result' if any.
+		deferred
+		end
+
+	target_name: detachable READABLE_STRING_32
+			-- Optional target name information in addition to `for_ecf_file'.
+		require
+			for_ecf_file_attached: for_ecf_file /= Void
+		deferred
+		end
+
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

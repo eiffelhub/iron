@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_NODE_CMS_SERVICE}."
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-14 16:56:27 +0200 (mer., 14 mai 2014) $"
+	revision: "$Revision: 95058 $"
 
 class
 	IRON_NODE_CMS_SERVICE
@@ -32,9 +32,7 @@ feature -- Initialization
 			l_iron: like iron
 		do
 				--| Optional
-			debug ("iron")
-				map_uri_template ("/debug/{name}", create {WSF_SELF_DOCUMENTED_URI_TEMPLATE_AGENT_HANDLER}.make_hidden (agent handle_debug))
-			end
+			router.handle ("/debug/", create {WSF_DEBUG_HANDLER}.make_hidden)
 
 			l_iron := iron
 			l_layout := l_iron.layout
@@ -94,7 +92,6 @@ feature -- Initialization
 			router.handle (l_iron.cms_page (""), create {WSF_STARTS_WITH_AGENT_HANDLER}.make (agent redirect_to_home))
 
 				--| Misc access
-			map_uri_template ("/debug/{name}", create {WSF_SELF_DOCUMENTED_URI_TEMPLATE_AGENT_HANDLER}.make_hidden (agent handle_debug))
 			router.handle ("/favicon.ico", create {WSF_SELF_DOCUMENTED_URI_AGENT_HANDLER}.make_hidden (agent handle_favicon))
 			router.handle ("/", create {WSF_SELF_DOCUMENTED_URI_AGENT_HANDLER}.make (agent handle_home("/", ?, ?), agent  (ia_m: WSF_ROUTER_MAPPING; ia_request_methods: detachable WSF_REQUEST_METHODS): WSF_ROUTER_MAPPING_DOCUMENTATION
 				do
@@ -117,7 +114,7 @@ feature -- Initialization
 						io.error.put_string (" ")
 						io.error.put_string (ia_map.handler.generator)
 						io.error.put_string (" ")
-						io.error.put_string (ia_map.debug_output)
+						io.error.put_string (ia_map.debug_output.as_string_8) -- eventual truncated information, but ok for debugging
 						io.error.put_new_line
 					end)
 			end
@@ -150,7 +147,7 @@ feature -- handler
 			create s.make_empty
 			s.append ("<ul>")
 			s.append ("<li><a href=%"" + req.script_url (l_iron.cms_page ("")) + "%">Home</a></li>")
-			s.append ("<li><a href=%"" + req.script_url (l_iron.package_list_web_page) + "%">Any version</a></li>")
+--			s.append ("<li><a href=%"" + req.script_url (l_iron.package_list_web_page) + "%">Any version</a></li>")
 			across
 				l_iron.database.versions as c_version
 			loop
@@ -174,7 +171,7 @@ feature -- Factory
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

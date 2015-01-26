@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_FS_CATALOG}."
 	author: ""
-	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93492 $"
+	date: "$Date: 2014-05-26 16:22:07 +0200 (lun., 26 mai 2014) $"
+	revision: "$Revision: 95178 $"
 
 class
 	IRON_FS_CATALOG
@@ -11,6 +11,10 @@ inherit
 	IRON_CATALOG
 
 	IRON_EXPORTER
+
+	REFACTORING_HELPER
+
+	SHARED_EXECUTION_ENVIRONMENT
 
 create
 	make
@@ -21,32 +25,18 @@ feature {NONE} -- Initialization
 		do
 			layout := a_layout
 			urls := a_urls
-			create remote_node.make (a_urls, api_version)
+			create installation_api.make_with_layout (a_layout, a_urls)
 
 			ensure_folder_exists (a_layout.repositories_path)
 			ensure_folder_exists (a_layout.archives_path)
 			ensure_folder_exists (a_layout.packages_path)
 
+			repositories := installation_api.db.repositories
 			load_repositories
-
-			create installation_api.make_with_layout (a_layout, a_urls)
 		end
 
-	installation_api: IRON_INSTALLATION_API
-
 	load_repositories
-		local
-			repo_conf: IRON_REPOSITORY_CONFIGURATION_FILE
 		do
-			create repo_conf.make (layout.repositories_configuration_file)
-
-			create repositories.make (1)
-			across
-				repo_conf.repositories as c
-			loop
-				repositories.force (c.item)
-			end
-
 			across
 				repositories as c
 			loop
@@ -70,61 +60,46 @@ feature -- Access
 
 	urls: IRON_URL_BUILDER
 
-	remote_node: IRON_REMOTE_NODE
+	installation_api: IRON_INSTALLATION_API
 
 feature -- Access: repository
 
-	repositories: ARRAYED_LIST [IRON_REPOSITORY]
+	repositories: LIST [IRON_REPOSITORY]
 
-	register_repository (a_name: READABLE_STRING_8; a_repo: IRON_REPOSITORY)
-		local
-			repo_conf: IRON_REPOSITORY_CONFIGURATION_FILE
+	register_repository (a_repo: IRON_REPOSITORY)
 		do
-			create repo_conf.make (layout.repositories_configuration_file)
-			repo_conf.add_repository (a_name, a_repo)
-			repo_conf.save
-			load_repositories
+			installation_api.db.save_repository (a_repo)
+			fill_repository (a_repo)
 		end
 
-	unregister_repository (a_name_or_uri: READABLE_STRING_GENERAL)
-		local
-			repo: detachable IRON_REPOSITORY
-			repo_conf: IRON_REPOSITORY_CONFIGURATION_FILE
-			repo_name: detachable READABLE_STRING_GENERAL
+	unregister_repository (a_uri: READABLE_STRING_GENERAL)
 		do
-			create repo_conf.make (layout.repositories_configuration_file)
-			if a_name_or_uri.starts_with ("http://") or a_name_or_uri.starts_with ("https://") then
-				across
-					repo_conf.repositories as c
-				until
-					repo_name /= Void
-				loop
-					if a_name_or_uri.same_string (c.item.uri.string) then
-						repo_name := c.key
-						repo := c.item
-					end
-				end
-			else
-				repo_name := a_name_or_uri
+			installation_api.db.remove_repository_by_uri (a_uri)
+			if attached repository_at (a_uri) as repo then
+				layout.iron_safe_delete_folder (layout.repository_data_folder (repo))
+--				layout.iron_safe_delete_file (layout.repository_packages_data_path (repo))
+				layout.iron_safe_delete_folder (layout.repository_archive_path (repo))
 			end
-			if repo_name /= Void then
-				repo_conf.remove_repository (repo_name)
-				repo_conf.save
-			end
-			load_repositories
+			installation_api.refresh
 		end
 
-	repository (a_version_uri: URI): detachable IRON_REPOSITORY
+	repository (a_location: URI): detachable IRON_REPOSITORY
 		do
 			across
 				repositories as c
 			until
 				Result /= Void
 			loop
-				if c.item.version_uri.is_same_uri (a_version_uri) then
+				if c.item.is_located_at (a_location) then
 					Result := c.item
 				end
 			end
+		end
+
+	is_package_installed (a_package: IRON_PACKAGE): BOOLEAN
+			-- Is package `a_package' installed?
+		do
+			Result := installation_api.is_package_installed (a_package)
 		end
 
 feature -- Acces: package
@@ -161,12 +136,12 @@ feature -- Acces: package
 			until
 				repo /= Void
 			loop
-				if s.starts_with (c.item.url) then
+				if s.starts_with (c.item.location_string) then
 					repo := c.item
 				end
 			end
 			if repo /= Void then
-				s := s.substring (repo.url.count + 1, s.count)
+				s := s.substring (repo.location_string.count + 1, s.count)
 				across
 					repo.available_packages as p
 				until
@@ -207,20 +182,72 @@ feature -- Operation
 		end
 
 	update_repository (repo: IRON_REPOSITORY; is_silent: BOOLEAN)
+		local
+			remote_node: IRON_REMOTE_NODE
+			dir_vis: IRON_PACKAGE_FILE_SCANNER
+			p: IRON_PACKAGE
+			l_package_file_factory: IRON_PACKAGE_FILE_FACTORY
+			pif: IRON_PACKAGE_FILE
+			l_last_operation_succeed: BOOLEAN
 		do
 			if not is_silent then
-				print ("Updating repository " + repo.uri.string + " version=" + repo.version + " ...%N")
+				print ("Updating repository " + repo.location_string + " ...%N")
 			end
-			repo.available_packages.wipe_out
-			if attached remote_node.packages (repo) as lst then
-				across lst as ic loop
-					repo.put_package (ic.item)
+			repo.reset_available_packages
+			if attached {IRON_WEB_REPOSITORY} repo as l_remote_repo then
+				create remote_node.make_with_repository (urls, api_version, l_remote_repo)
+				if attached remote_node.packages as lst then
+					l_last_operation_succeed := remote_node.last_operation_succeed
+					if l_last_operation_succeed then
+						across lst as ic loop
+							if not is_silent then
+								print ("- ")
+								print (ic.item.human_identifier)
+								print ("%N")
+							end
+							repo.put_package (ic.item)
+						end
+					elseif not is_silent then
+						if attached remote_node.last_operation_error_message as err then
+							print ("ERROR: " + err + "%N")
+						else
+							print ("ERROR: unable to get packages information!%N")
+						end
+					end
 				end
-				if not is_silent and then repo.available_packages.is_empty then
-					print ("ERROR: no information from repository!%N")
+			elseif attached {IRON_WORKING_COPY_REPOSITORY} repo as l_wc_repo then
+				create dir_vis.make_empty
+				dir_vis.set_default_iron_file_name ("package.iron")
+				dir_vis.exclude_directory_names (<<"EIFGENs", ".svn", ".git">>)
+				dir_vis.stop_on_first_matching_file (True)
+				dir_vis.process_directory (l_wc_repo.path)
+				create l_package_file_factory
+				across
+					dir_vis.list as ic
+				loop
+					pif := l_package_file_factory.new_package_file (ic.item)
+					p := pif.to_package (l_wc_repo)
+					if not is_silent then
+						print ("- ")
+						print (p.human_identifier)
+						print ("%N")
+						if not pif.has_expected_file_name then
+							print ("!Warning: expected file name is %"")
+							print (pif.expected_file_name)
+							print ("%" instead of %"")
+							print (ic.item)
+							print ("%"%N")
+						end
+					end
+					repo.put_package (p)
 				end
+			else
+				debug ("refactor_fixme")
+					fixme ("Local repository update is not yet implemented%N")
+				end
+				print ("Local repository update is not yet implemented%N")
 			end
-			save_repository (repo)
+			save_updated_repository (repo)
 		end
 
 	fill_repository (repo: IRON_REPOSITORY)
@@ -230,7 +257,7 @@ feature -- Operation
 			retried: BOOLEAN
 		do
 			if not retried then
-				p := layout.repository_path (repo)
+				p := layout.repository_data_file (repo)
 				create f.make_with_path (p)
 				if f.exists and then f.is_access_readable then
 					f.open_read
@@ -240,19 +267,23 @@ feature -- Operation
 					f.close
 				end
 			else
-				repo.available_packages.wipe_out
+				repo.reset_available_packages
 			end
 		rescue
 			retried := True
 			retry
 		end
 
-	save_repository (repo: IRON_REPOSITORY)
+	save_updated_repository (repo: IRON_REPOSITORY)
 		local
 			f: RAW_FILE
 			p: PATH
 		do
-			p := layout.repository_path (repo)
+			installation_api.db.save_available_repository_packages (repo)
+
+				-- Save repository object
+			p := layout.repository_data_file (repo)
+			ensure_folder_exists (p.parent)
 			create f.make_with_path (p)
 			f.create_read_write
 			f.independent_store (repo)
@@ -266,36 +297,70 @@ feature -- Package operations
 			Result := (create {IRON_UTILITIES}).path_to_uri_string (p)
 		end
 
-	download_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
+	download_package (a_repository: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
 		local
 			f: RAW_FILE
 			p: PATH
+			remote_node: IRON_REMOTE_NODE
 		do
 			p := layout.package_archive_path (a_package)
 			ensure_folder_exists (p.parent)
 			if a_package.has_archive_uri then
+				create remote_node.make_with_repository (urls, api_version, a_repository)
 				remote_node.download_package_archive (a_package, p, ignoring_cache)
 				create f.make_with_path (p)
 				if f.exists then
-					a_package.set_archive_uri (path_to_uri_string (p.absolute_path.canonical_path))
+					a_package.set_archive_path (p.absolute_path.canonical_path)
 				else
 						-- Failure
 				end
 			end
 		end
 
-	install_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
-			-- Install `a_package'.
+	install_package (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
+			-- <Precursor>
+		do
+			if attached {IRON_WEB_REPOSITORY} a_repo as l_web_repo then
+				install_web_package (l_web_repo, a_package, ignoring_cache)
+			elseif attached {IRON_WORKING_COPY_REPOSITORY} a_repo as l_wc_repo then
+				install_fs_package (l_wc_repo, a_package)
+			else
+				check unsupported: False end
+			end
+		end
+
+	install_fs_package (a_repo: IRON_WORKING_COPY_REPOSITORY; a_package: IRON_PACKAGE)
+				-- Install `a_package' from local (file system) iron repository.
+		local
+			pii: IRON_PACKAGE_INSTALLATION_INFO
+			p_info: PATH
+			d: DIRECTORY
+		do
+			p_info := layout.package_installation_info_path (a_package)
+			if attached layout.package_installation_path (a_package) as p then
+
+				create d.make_with_path (p)
+				if d.exists then
+					create pii.make_with_package (a_package, p_info, p)
+					pii.save
+					on_package_just_installed (a_package)
+				end
+			end
+		end
+
+	install_web_package (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
+			-- Install `a_package' from web iron repository.
 		local
 			p: detachable PATH
 			p_info,p_renaming,t: PATH
 			l_uri: detachable URI
 			ipu: IRON_UTILITIES
 			f: RAW_FILE
-			j: STRING
-			js: JSON_STRING
+--			j: STRING
+--			js: JSON_STRING
 			d: DIRECTORY
 			i: INTEGER
+			pii: IRON_PACKAGE_INSTALLATION_INFO
 		do
 			l_uri := a_package.archive_uri
 			if l_uri /= Void then
@@ -342,51 +407,20 @@ feature -- Package operations
 					create d.make_with_path (p)
 					if d.exists then
 						if not d.is_empty then
-							create j.make (512)
-							j.append_character ('{')
-							if attached p.entry as p_entity then
-								j.append ("%"local_path%": ")
-								js := p_entity.name
-								j.append (js.representation)
-								j.append (",")
-							end
-
-							j.append ("%"repository%": {")
-							j.append ("%"uri%":")
-							js := a_package.repository.uri.string
-							j.append (js.representation)
-							j.append_character (',')
-							j.append ("%"version%":")
-							js := a_package.repository.version
-							j.append (js.representation)
-							j.append_character ('}')
-
-							if attached a_package.json_item as l_json then
-								j.append_character (',')
-								j.append ("%"package%":")
-								j.append (l_json)
-							end
-							j.append_character ('}')
-
-							ensure_folder_exists (p_info.parent)
-							create f.make_with_path (p_info)
-							f.create_read_write
-							f.put_string (j)
-							f.put_new_line
-							f.close
-
-							installed_packages.force (a_package)
+							create pii.make_with_package (a_package, p_info, p)
+							pii.save
+							on_package_just_installed (a_package)
 						else
-							d.recursive_delete
+							layout.iron_safe_delete_folder (d.path)
 						end
 					end
 				else
 						-- missing local archive
-					download_package (a_package, ignoring_cache)
+					download_package (a_repo, a_package, ignoring_cache)
 
 					if a_package.has_archive_file_uri then
 							-- try again
-						install_package (a_package, ignoring_cache)
+						install_package (a_repo, a_package, ignoring_cache)
 					else
 						-- nothing was download
 					end
@@ -398,38 +432,153 @@ feature -- Package operations
 
 	uninstall_package (a_package: IRON_PACKAGE)
 			-- Uninstall `a_package'.
-		local
-			p: detachable PATH
-			d: DIRECTORY
-			f: RAW_FILE
 		do
-			p := layout.package_installation_path (a_package)
-			if p /= Void then
-				create d.make_with_path (p)
-				if d.exists then
-					d.recursive_delete
-				end
-			end
+				-- Installation info file.
+			layout.iron_safe_delete_file (layout.package_installation_info_path (a_package))
 
-			p := layout.package_installation_info_path (a_package)
-			create f.make_with_path (p)
-			if f.exists then
-				f.delete
-			end
+			if a_package.is_local_working_copy then
+					-- DO NOT REMOVE local source folder
+					-- No archive file to delete for local package
+			else
+				layout.iron_safe_delete_folder (layout.package_installation_path (a_package))
 
-			p := layout.package_renaming_installation_path (a_package)
-			create f.make_with_path (p)
-			if f.exists then
-				f.delete
-			end
+					-- Eventual renaming installation path
+				layout.iron_safe_delete_file (layout.package_renaming_installation_path (a_package))
 
-			p := layout.package_archive_path (a_package)
-			create f.make_with_path (p)
-			if f.exists then
-				f.delete
+					-- Associated archive file
+				layout.iron_safe_delete_file (layout.package_archive_path (a_package))
 			end
 
 			installed_packages.prune (a_package)
+		end
+
+	on_package_just_installed (a_package: IRON_PACKAGE)
+			-- `a_package' just got installed.
+		do
+			installed_packages.force (a_package)
+		end
+
+	setup_package_installation (a_package: IRON_PACKAGE; cl_succeed: detachable CELL [BOOLEAN]; is_silent: BOOLEAN)
+			-- <Precursor}
+		local
+			pif_fac: IRON_PACKAGE_FILE_FACTORY
+			ip,p: detachable PATH
+			ut: FILE_UTILITIES
+			envs: STRING_TABLE [detachable READABLE_STRING_GENERAL]
+			cl_code: CELL [INTEGER]
+			l_ok: BOOLEAN
+		do
+			l_ok := True
+			create pif_fac
+			ip := layout.package_installation_path (a_package)
+			if ip /= Void then
+				p := ip.extended ("package.iron")
+				if
+					ut.file_path_exists (p) and then
+					attached pif_fac.new_package_file (p) as pif
+				then
+					if attached pif.setup_operations as l_operations then
+						create envs.make (3)
+						envs.force (execution_environment.item ("IRON_PATH"), "IRON_PATH")
+						envs.force (execution_environment.item ("IRON_PACKAGE_PATH"), "IRON_PACKAGE_PATH")
+						envs.force (execution_environment.item ("IRON_PACKAGE_NAME"), "IRON_PACKAGE_NAME")
+
+						execution_environment.put (layout.path.name, "IRON_PATH")
+						execution_environment.put (ip.name, "IRON_PACKAGE_PATH")
+						execution_environment.put (a_package.identifier, "IRON_PACKAGE_NAME")
+
+						across
+							l_operations as ic
+						loop
+							if ic.item.name.is_case_insensitive_equal ("compile_library") then
+								create cl_code.put (0)
+								if is_silent then
+									execute_command_line (finish_freezing_command_name, ip.extended (ic.item.instruction), agent (s: STRING) do end, cl_code)
+								else
+									execute_command_line (finish_freezing_command_name, ip.extended (ic.item.instruction), agent (s: STRING) do print (s) end, cl_code)
+								end
+								l_ok := l_ok and cl_code.item = 0
+							else
+								if not is_silent then
+									print (" ##setup %"")
+									print (ic.item)
+									print ("%" ignored.##")
+								end
+							end
+						end
+						across
+							envs as ic
+						loop
+							if attached ic.item as v then
+								execution_environment.put (v, ic.key)
+							else
+								execution_environment.put ("", ic.key) -- FIXME: would be better to use unsetenv but this is not available.
+							end
+						end
+					end
+				end
+			end
+			if cl_succeed /= Void then
+				cl_succeed.replace (l_ok)
+			end
+		end
+
+	finish_freezing_command_name: STRING_32
+		local
+			p: detachable PATH
+		do
+			if attached execution_environment.item ("ISE_EIFFEL") as l_ise_eiffel then
+				if attached execution_environment.item ("ISE_PLATFORM") as l_ise_platform then
+					create p.make_from_string (l_ise_eiffel)
+					p := p.extended ("studio").extended ("spec").extended (l_ise_platform).extended ("bin")
+				end
+			end
+			if p /= Void then
+				if {PLATFORM}.is_windows then
+					Result := p.extended ("compile_library.bat").name
+				else
+					Result := p.extended ("finish_freezing.sh").name + {STRING_32} " -library"
+				end
+			else
+				if {PLATFORM}.is_windows then
+					Result := {STRING_32} "finish_freezing.bat -library"
+				else
+					Result := {STRING_32} "finish_freezing.sh -library"
+				end
+			end
+		end
+
+	execute_command_line (a_command_line: READABLE_STRING_GENERAL; a_dir: detachable PATH; agt_output: detachable PROCEDURE [ANY, TUPLE [STRING_8]]; cell_return_code: detachable CELL [INTEGER])
+			-- Execute `a_command_line' in folder `a_dir' (if provided),
+			-- return the exit code in `cell_return_code.item' if `cell_return_code' is provided,
+			-- and return the output in `cell_output.item' if `a_output' is provided.
+		local
+			proc_fact: PROCESS_FACTORY
+			proc: PROCESS
+			wdir: detachable READABLE_STRING_GENERAL
+		do
+			create proc_fact
+			if a_dir /= Void then
+				wdir := a_dir.name
+			end
+			proc := proc_fact.process_launcher_with_command_line (a_command_line, wdir)
+			if agt_output /= Void then
+				proc.redirect_output_to_agent (agt_output)
+				proc.redirect_error_to_same_as_output
+			else
+				proc.cancel_output_redirection
+			end
+			proc.launch
+			if proc.launched then
+				proc.wait_for_exit
+			end
+			if cell_return_code /= Void then
+				if proc.launched then
+					cell_return_code.replace (proc.exit_code)
+				else
+					cell_return_code.replace (-1)
+				end
+			end
 		end
 
 feature -- Restricted
@@ -461,7 +610,7 @@ feature {NONE} -- Helper
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

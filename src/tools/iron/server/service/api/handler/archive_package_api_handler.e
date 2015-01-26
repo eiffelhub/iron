@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {ARCHIVE_PACKAGE_API_HANDLER}."
 	author: ""
-	date: "$Date: 2013-12-03 10:17:59 +0100 (mar., 03 déc. 2013) $"
-	revision: "$Revision: 93602 $"
+	date: "$Date: 2014-06-03 14:06:25 +0200 (mar., 03 juin 2014) $"
+	revision: "$Revision: 95222 $"
 
 class
 	ARCHIVE_PACKAGE_API_HANDLER
@@ -14,6 +14,8 @@ inherit
 		rename
 			set_iron as make
 		end
+
+	SHARED_EXECUTION_ENVIRONMENT
 
 create
 	make
@@ -77,13 +79,23 @@ feature -- Execution
 						end
 					elseif req.content_length_value > 0 then
 						if attached new_temporary_output_file ("tmp-uploaded-file") as f then
+							debug ("ssd_file_delay")
+								execution_environment.sleep (1_000_000_000)
+							end
 							req.read_input_data_into_file (f)
 							f.close
 							check all_data_fetched: f.count.to_natural_64 = req.content_length_value end
+
 							iron.database.save_package_archive (l_package, f.path, False)
 							m.add_normal_message ("archive uploaded")
 							if l_package.has_archive then
-								m.add_normal_message ("archive-size=" + l_package.archive_file_size.out)
+								m.add_normal_message ("archive_size=" + l_package.archive_file_size.out)
+
+									-- Save package data .. especially the new hash
+								iron.database.update_version_package (l_package)
+								if attached l_package.archive_hash as l_hash then
+									m.add_normal_message ("archive_hash=" + l_hash.out)
+								end
 							else
 								m.add_error_message ("archive is missing!!")
 							end
@@ -124,10 +136,11 @@ feature -- Execution
 		do
 			if attached package_version_from_id_path_parameter (req, "id") as l_package then
 				if attached l_package.archive_path as p then
-					create m.make (p.utf_8_name)
+					create m.make (p.name)
 					m.set_base_name (l_package.id.as_lower + ".tar.bz2")
 					m.set_no_cache
 					res.send (m)
+					iron.database.increment_download_counter (l_package)
 				else
 					res.send (new_not_found_response_message (req))
 				end
@@ -145,7 +158,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

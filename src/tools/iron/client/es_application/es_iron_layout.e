@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {ES_IRON_LAYOUT}."
-	date: "$Date: 2013-05-24 16:19:26 +0200 (ven., 24 mai 2013) $"
-	revision: "$Revision: 92590 $"
+	date: "$Date: 2014-02-04 22:23:08 +0100 (mar., 04 févr. 2014) $"
+	revision: "$Revision: 94170 $"
 
 class
 	ES_IRON_LAYOUT
@@ -21,7 +21,7 @@ feature {NONE} -- Initialization
 			-- Initialize with Eiffel layout `e'
 		do
 			eiffel_layout := e
-			make_with_path (e.iron_path)
+			make_with_path (e.iron_path, e.installation_iron_path)
 		end
 
 	eiffel_layout: EIFFEL_ENV
@@ -37,7 +37,7 @@ feature -- Access
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

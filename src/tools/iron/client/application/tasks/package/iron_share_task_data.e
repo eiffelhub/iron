@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_SHARE_TASK_DATA}."
 	author: ""
-	date: "$Date: 2013-05-30 13:53:45 +0200 (jeu., 30 mai 2013) $"
-	revision: "$Revision: 92635 $"
+	date: "$Date: 2014-04-09 13:25:04 +0200 (mer., 09 avr. 2014) $"
+	revision: "$Revision: 94796 $"
 
 class
 	IRON_SHARE_TASK_DATA
@@ -18,8 +18,16 @@ feature {NONE} -- Initialization
 		end
 
 	make_from_file (p: PATH)
+			-- Create Current from sharing data file `p'
 		do
 			import (p)
+		end
+
+	make_from_package_file (pf: IRON_PACKAGE_FILE)
+			-- Create Current from package file `pf'
+		do
+			name := pf.package_name
+			title := pf.item ("title")
 		end
 
 feature -- Access
@@ -28,6 +36,8 @@ feature -- Access
 
 	name: detachable READABLE_STRING_32
 
+	title: detachable READABLE_STRING_32
+
 	description: detachable READABLE_STRING_32
 
 	archive: detachable PATH
@@ -35,6 +45,35 @@ feature -- Access
 	source: detachable PATH
 
 	indexes: detachable ARRAYED_LIST [READABLE_STRING_32]
+
+feature -- Status report
+
+	has_name: BOOLEAN
+		do
+			Result := not is_whitespace_string (name)
+		end
+
+	has_title: BOOLEAN
+		do
+			Result := not is_whitespace_string (title)
+		end
+
+	has_description: BOOLEAN
+		do
+			Result := not is_whitespace_string (description)
+		end
+
+	has_source_or_archive: BOOLEAN
+		do
+			Result := archive /= Void or source /= Void
+		end
+
+feature {NONE} -- Helper
+
+	is_whitespace_string (s: detachable READABLE_STRING_GENERAL): BOOLEAN
+		do
+			Result := s = Void or else (s.is_empty or s.is_whitespace)
+		end
 
 feature -- Change
 
@@ -53,6 +92,15 @@ feature -- Change
 				name := Void
 			else
 				name := v
+			end
+		end
+
+	set_title (v: like title)
+		do
+			if v = Void or else v.is_empty then
+				title := Void
+			else
+				title := v
 			end
 		end
 
@@ -133,7 +181,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

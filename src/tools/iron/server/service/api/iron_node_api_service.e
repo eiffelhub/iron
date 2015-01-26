@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_API_SERVICE}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-01-22 22:06:59 +0100 (jeu., 22 janv. 2015) $"
+	revision: "$Revision: 96522 $"
 
 class
 	IRON_NODE_API_SERVICE
@@ -44,6 +44,9 @@ feature -- Initialization
 			create h_package_map.make (l_iron)
 
 				-- REST: access
+			map_uri_template_with_request_methods (l_iron.api_resource ("/package/{id}"), h_package, router.methods_get) --  Get package data for `id'
+
+				-- REST: access by version
 			map_uri_template_with_request_methods (l_iron.api_resource ("/{version}/package/{id}"), h_package, router.methods_get) --  Get package data for `id'
 			map_uri_template_with_request_methods (l_iron.api_resource ("/{version}/package/{id}/archive"), h_archive_package, router.methods_get) --  Get archive package data i.e download archive...
 
@@ -85,7 +88,7 @@ feature -- Initialization
 						io.error.put_string (" ")
 						io.error.put_string (ia_map.handler.generator)
 						io.error.put_string (" ")
-						io.error.put_string (ia_map.debug_output)
+						io.error.put_string (ia_map.debug_output.as_string_8) -- eventual truncated information, but ok for debugging
 						io.error.put_new_line
 					end)
 			end
@@ -104,7 +107,7 @@ feature -- Factory
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

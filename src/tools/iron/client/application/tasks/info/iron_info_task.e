@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INFO_TASK}."
 	author: ""
-	date: "$Date: 2013-06-05 17:10:12 +0200 (mer., 05 juin 2013) $"
-	revision: "$Revision: 92670 $"
+	date: "$Date: 2014-06-03 14:06:25 +0200 (mar., 03 juin 2014) $"
+	revision: "$Revision: 95222 $"
 
 class
 	IRON_INFO_TASK
@@ -22,20 +22,24 @@ feature -- Execute
 
 	process (a_iron: IRON)
 		local
-			args: IRON_SEARCH_ARGUMENT_PARSER
+			args: IRON_INFO_ARGUMENT_PARSER
 		do
 			create args.make (Current)
 			args.execute (agent execute (args, a_iron))
 		end
 
-	execute (args: IRON_SEARCH_ARGUMENTS; a_iron: IRON)
+	execute (args: IRON_INFO_ARGUMENTS; a_iron: IRON)
 		do
 			across
 				args.resources as c
 			loop
 				print (m_title_information_for (c.item))
 				print_new_line
-				if c.item.starts_with ("http://") or c.item.starts_with ("https://") then
+				if
+					c.item.starts_with ("http://")
+					or c.item.starts_with ("https://")
+					or c.item.starts_with ("file://")
+				then
 					if attached a_iron.catalog_api.package_associated_with_uri (c.item) as l_package then
 						display_information (l_package, args, a_iron)
 					end
@@ -53,11 +57,14 @@ feature -- Execute
 		end
 
 	display_information (a_package: IRON_PACKAGE; args: IRON_ARGUMENTS; a_iron: IRON)
+		local
+			l_rev: NATURAL
+			l_size: INTEGER
 		do
-			print (m_information_for (a_package.human_identifier, a_package.id, a_package.repository.url))
+			print (m_information_for (a_package.human_identifier, a_package.id, a_package.repository.location_string))
 			print_new_line
 			if
-				a_iron.installation_api.is_installed (a_package) and then
+				a_iron.installation_api.is_package_installed (a_package) and then
 				attached a_iron.installation_api.package_installation_path (a_package) as l_installation_path
 			then
 				print ("  ")
@@ -72,6 +79,29 @@ feature -- Execute
 				print (l_description)
 				print_new_line
 			end
+			if a_package.has_archive_uri then
+				print_new_line
+				print ("  archive: ")
+				l_rev := a_package.archive_revision
+				if l_rev > 0 then
+					print (" revision=")
+					print (l_rev.out)
+				end
+				l_size := a_package.archive_size
+				if l_size > 0 then
+					print (" size=")
+					print (l_size.out)
+				end
+				if attached a_package.archive_hash as l_hash then
+					print (" hash=")
+					print (l_hash)
+				end
+				if attached a_package.item ("archive_date") as l_date then
+					print (" date=")
+					print (l_date)
+				end
+				print_new_line
+			end
 
 			if attached a_package.associated_paths as l_paths and then not l_paths.is_empty then
 				print_new_line
@@ -83,7 +113,7 @@ feature -- Execute
 					l_paths as c
 				loop
 					print ("    - ");
-					print (a_package.repository.url)
+					print (a_package.repository.location_string)
 					print (c.item); print ("%N")
 				end
 			end
@@ -113,7 +143,7 @@ feature -- Execute
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

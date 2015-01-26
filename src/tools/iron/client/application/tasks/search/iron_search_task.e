@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_SEARCH_TASK}."
 	author: ""
-	date: "$Date: 2013-06-05 17:10:12 +0200 (mer., 05 juin 2013) $"
-	revision: "$Revision: 92670 $"
+	date: "$Date: 2014-04-10 19:08:31 +0200 (jeu., 10 avr. 2014) $"
+	revision: "$Revision: 94812 $"
 
 class
 	IRON_SEARCH_TASK
@@ -38,7 +38,11 @@ feature -- Execute
 				print ("Search %"")
 				print (c.item)
 				print ("%" ...%N")
-				if c.item.starts_with ("http://") or c.item.starts_with ("https://") then
+				if
+					c.item.starts_with ("http://")
+					or c.item.starts_with ("https://")
+					or c.item.starts_with ("file://")
+				then
 					if attached a_iron.installation_api.local_path_associated_with_uri (c.item) as l_path then
 						print ("Installed:%N  ")
 						print (l_path.name)
@@ -85,7 +89,7 @@ feature -- Execute
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

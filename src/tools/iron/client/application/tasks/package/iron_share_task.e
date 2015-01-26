@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_SHARE_TASK}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-01-23 00:34:29 +0100 (ven., 23 janv. 2015) $"
+	revision: "$Revision: 96526 $"
 
 class
 	IRON_SHARE_TASK
@@ -40,23 +40,48 @@ feature -- Execute
 			tgt: PATH
 			l_package: detachable IRON_PACKAGE
 			err, done: BOOLEAN
-			l_name, l_id: detachable READABLE_STRING_32
-			l_archive_path: detachable PATH
+			l_title, l_name, l_id: detachable READABLE_STRING_32
 			remote_node: IRON_REMOTE_NODE
+			u,p, repo_url: detachable READABLE_STRING_32
+			ini: INI_FILE
+			cl_body: CELL [detachable READABLE_STRING_8]
+			l_upload_new_archive: BOOLEAN
+			l_iron_archive: detachable IRON_ARCHIVE
 		do
-			create remote_node.make (a_iron.urls, a_iron.api_version)
 			err := False
+
+			u := args.username
+			p := args.password
+			repo_url := args.repository
+
+			if attached args.configuration_file as l_cfg then
+				create ini.make_with_path (l_cfg)
+				if u = Void then
+					u := ini.item ("username")
+				end
+				if p = Void then
+					p := ini.item ("password")
+				end
+				if repo_url = Void then
+					repo_url := ini.item ("repository")
+				end
+			end
 			if
-				attached args.username as u and
-				attached args.password as p and
-				attached args.repository as repo_url and
+				u /= Void and p /= Void and
+				repo_url /= Void and
 				attached args.operation as op
 			then
 				create uri.make_from_string (repo_url.to_string_8)
-				if uri.is_valid and then attached a_iron.catalog_api.repository (uri) as repo then
+				if
+					uri.is_valid and then
+					attached {IRON_WEB_REPOSITORY} a_iron.catalog_api.repository (uri) as repo
+				then
+					create remote_node.make_with_repository (a_iron.urls, a_iron.api_version, repo)
+
 					l_data := data_from (args)
 					if l_data /= Void then
 						l_name := l_data.name
+						l_title := l_data.title
 						l_id := l_data.id
 
 						if attached args.package_indexes as l_indexes then
@@ -73,6 +98,10 @@ feature -- Execute
 						elseif l_id /= Void then
 							l_package := repo.package_associated_with_id (l_id)
 						end
+
+						l_upload_new_archive := l_package = Void or else not l_package.has_archive_uri
+											or else l_data.archive /= Void
+											or else args.is_forcing
 
 						if err then
 							-- error
@@ -136,32 +165,20 @@ feature -- Execute
 						end
 
 						if not done and not err then
-							if attached l_data.source as src then
-								create tgt.make_from_string ("tmp_archive")
-								if l_package /= Void then
-									l_package.set_archive_uri (Void)
-								end
-								print ({STRING_32} "Building the archive from folder %"" + src.name + {STRING_32} "%" %N")
-								(create {IRON_UTILITIES}).build_package_archive (l_package, src, tgt, a_iron.layout)
-								l_archive_path := tgt.absolute_path
-							elseif attached l_data.archive as l_archive then
-								l_archive_path := l_archive
-							end
-
 							if l_package = Void then
 								if l_name /= Void then
 									print ({STRING_32} "Create new package %"" + l_name + "%"%N")
 								else
 									print ({STRING_32} "Create new package %N")
 								end
-								remote_node.publish_package (l_id, l_name, l_data.description, l_archive_path, repo, l_package, u, p)
+								remote_node.publish_package (l_id, l_name, l_title, l_data.description, l_package, Void, u, p)
 							else
-								print ({STRING_32} "Update package %"" + l_package.human_identifier + {STRING_32} "%" %N")
-								remote_node.publish_package (l_id, l_name, l_data.description, l_archive_path, repo, l_package, u, p)
+								print ({STRING_32} "Update package " + l_package.human_identifier + {STRING_32} " %N")
+								remote_node.publish_package (l_id, l_name, l_title, l_data.description, l_package, Void, u, p)
 							end
 							if remote_node.last_operation_succeed then
 								if l_package /= Void then
-									print ({STRING_32} "Package %""+ l_package.human_identifier + {STRING_32} "%" updated.")
+									print ({STRING_32} "Package "+ l_package.human_identifier + {STRING_32} " updated.")
 									print_new_line
 								else
 									print ({STRING_32} "Package created.")
@@ -184,46 +201,120 @@ feature -- Execute
 								err := True
 							end
 							if not err and l_package /= Void then
+									-- Only on existing package !
+
+									--| About indexes
 								if attached l_data.indexes as l_paths then
 									print ({STRING_32} "Adding indexes:%N")
-									across
-										l_paths as c
+									from
+										l_paths.start
+									until
+										l_paths.after
 									loop
-										print ({STRING_32} "  - " + c.item)
+										print ({STRING_32} "  - " + l_paths.item)
+
+										if across l_package.associated_paths as p_ic some p_ic.item.same_string (l_paths.item) end then
+												-- Already mapped to this index
+											l_paths.remove
+											print (" : already associated (skipped)")
+										else
+											l_paths.forth
+										end
 										print_new_line
 									end
-									remote_node.add_indexes (l_package, l_paths, u, p)
-									if remote_node.last_operation_succeed then
-										if l_paths.count > 1 then
-											print ("Package successfully associated with indexes!")
-										else
-											print ("Package successfully associated with index!")
-										end
-										print_new_line
+									if l_paths.is_empty then
+										print ("Package has no new index.")
 									else
-										if attached remote_node.last_operation_error_message as errmsg then
-											print (errmsg)
+										remote_node.add_indexes (l_package, l_paths, u, p)
+										if remote_node.last_operation_succeed then
+											if l_paths.count > 1 then
+												print ("Package successfully associated with indexes!")
+											else
+												print ("Package successfully associated with index!")
+											end
+											print_new_line
 										else
-											print ("[Error] path association failed!")
+											if attached remote_node.last_operation_error_message as errmsg then
+												print (errmsg)
+											else
+												print ("[Error] path association failed!")
+											end
+											print_new_line
+											err := True
 										end
-										print_new_line
-										err := True
 									end
 								end
-								if l_archive_path /= Void then
-									print ({STRING_32} "Uploading package archive ...%N")
-									remote_node.upload_package_archive (l_package, l_archive_path, u, p)
-									if remote_node.last_operation_succeed then
-										print ("Archive successfully uploaded!")
-										print_new_line
-									else
-										if attached remote_node.last_operation_error_message as errmsg then
-											print (errmsg)
-										else
-											print ("[Error] Archive uploading failed!")
+
+									-- About archive
+								if l_upload_new_archive then
+									if attached l_data.source as src then
+										create tgt.make_from_string ("tmp_archive_" + (create {UUID_GENERATOR}).generate_uuid.out)
+										print ({STRING_32} "Building the archive from folder %"" + src.name + {STRING_32} "%" %N");
+
+										l_iron_archive := (create {IRON_UTILITIES}).build_package_archive (l_package, src, tgt, a_iron.layout)
+										if l_iron_archive = Void or else not l_iron_archive.file_exists then
+											print ("[Error] Failure occured during package archive creation!%N")
 										end
-										print_new_line
-										err := True
+--										if not (create {FILE_UTILITIES}).file_path_exists (l_archive_path) then
+--											print ("[Error] Failure occured during package archive creation!%N")
+--										end
+									elseif attached l_data.archive as l_archive then
+										create l_iron_archive.make (l_archive)
+									end
+
+									if l_iron_archive /= Void then
+										if l_iron_archive.file_exists then
+											if
+												l_package.has_archive_uri and then
+												l_package.archive_size = l_iron_archive.file_size and then
+												(attached l_package.archive_hash as l_package_archive_hash and
+												 attached l_iron_archive.hash as l_iron_hash) and then l_package_archive_hash.is_case_insensitive_equal_general (l_iron_hash)
+											then
+													-- Same archive .. no need to upload
+												print ("Package archive is already uploaded (")
+												print (" size=" + l_iron_archive.file_size.out)
+												print (" hash=" + l_iron_hash)
+												print (" ).")
+												print_new_line
+											else
+												print ("Uploading package archive [size="+ l_iron_archive.file_size.out +"]")
+												if attached l_iron_archive.hash as l_hash then
+													print (" ["+ l_hash + "]")
+												end
+												print ("...%N")
+												if l_package.has_archive_uri then
+													print (" -> replacing previous archive [size=" + l_package.archive_size.out)
+													if attached l_package.archive_hash as l_hash then
+														print (" hash=" + l_hash)
+													end
+													print (" ].")
+													print_new_line
+												end
+												create cl_body.put (Void)
+												remote_node.upload_package_archive (l_package, l_iron_archive, u, p, cl_body)
+												if remote_node.last_operation_succeed then
+													print ("Archive successfully uploaded!")
+													print_new_line
+												else
+													if attached remote_node.last_operation_error_message as errmsg then
+														print (errmsg)
+													else
+														print ("[Error] Archive uploading failed!")
+													end
+													print_new_line
+													err := True
+												end
+												if args.verbose then
+													if attached cl_body.item as l_resp_body then
+														print (l_resp_body)
+														print_new_line
+													end
+												end
+											end
+										else
+											print ({STRING_32} "Unable to find package archive %""+ l_iron_archive.path.name +"%"!")
+											print_new_line
+										end
 									end
 								end
 							end
@@ -233,9 +324,9 @@ feature -- Execute
 						print_new_line
 					end
 				else
-					print ({STRING_32} "repository url [" + repo_url + "] is not known or invalid!")
+					print ({STRING_32} "Repository url [" + repo_url + "] is unknown or invalid!")
 					print_new_line
-					print ({STRING_32} "hint: iron repository --add name " + repo_url + " !")
+					print ({STRING_32} "hint: iron repository --add " + repo_url + " !")
 					print_new_line
 				end
 			else
@@ -244,35 +335,109 @@ feature -- Execute
 			end
 		end
 
+	file_sha1 (p: PATH): STRING
+		local
+			f: RAW_FILE
+			sha1: SHA1
+		do
+			create f.make_with_path (p)
+			if f.exists and then f.is_readable then
+				create sha1.make
+				f.open_read
+				sha1.update_from_io_medium (f)
+				f.close
+				Result := "SHA1=" + sha1.digest_as_string
+			else
+				Result := ""
+			end
+		end
+
+	file_size (p: PATH): INTEGER
+		local
+			f: RAW_FILE
+		do
+			create f.make_with_path (p)
+			if f.exists and then f.is_readable then
+				Result := f.count
+			end
+		end
+
 	data_from (args: IRON_SHARE_ARGUMENTS): detachable IRON_SHARE_TASK_DATA
 		local
 			u: FILE_UTILITIES
 			p: detachable PATH
+			pf: detachable IRON_PACKAGE_FILE
+			l_dft_name: detachable READABLE_STRING_32
 		do
 			p := args.data_file
 			if p /= Void and then u.file_path_exists (p) then
 				create Result.make_from_file (p)
 			else
 				create Result.make
+			end
+
+			if attached args.package_file as l_loc then
+				pf := (create {IRON_PACKAGE_FILE_FACTORY}).new_package_file (l_loc)
+				if attached pf.title as l_title then
+					Result.set_title (l_title)
+				end
+				if attached pf.description as l_description then
+					Result.set_description (l_description)
+				end
+				Result.set_source (l_loc.parent)
+				l_dft_name := pf.package_name
+			end
+
+			if Result.has_name then
+					-- Do no overwrite package name from package.iron!
+			else
 				if attached args.package_name as l_name then
 					Result.set_name (l_name)
-				elseif not args.is_batch then
-					print ("Name? >")
+				elseif args.is_batch then
+					Result.set_name (l_dft_name)
+				else
+					print ("Name? ")
+					if l_dft_name /= Void then
+						print ("[")
+						print (l_dft_name)
+						print ("]")
+					end
+					print (" >")
 					io.read_line
-					Result.set_name (io.last_string.to_string_32)
+					if l_dft_name /= Void and then io.last_string.is_whitespace then
+						Result.set_name (l_dft_name)
+					else
+						Result.set_name (io.last_string.to_string_32)
+					end
+				end
+			end
+
+			if not args.is_delete then
+				if Result.has_title then
+						-- Do no overwrite package title from package.iron!
+				elseif attached args.package_title as l_title then
+					Result.set_title (l_title)
+				elseif not args.is_batch then
+					print ("Title? >")
+					io.read_line
+					Result.set_title (io.last_string.to_string_32)
 				end
 
-				if not args.is_delete then
-					if attached args.package_description as l_desc then
-						Result.set_description (l_desc)
-					elseif not args.is_batch then
-						print ("Description? >")
-						io.read_line
-						Result.set_description (io.last_string.to_string_32)
-					end
+				if Result.has_description then
+						-- Do no overwrite package description from package.iron!
+				elseif attached args.package_description as l_desc then
+					Result.set_description (l_desc)
+				elseif not args.is_batch then
+					print ("Description? >")
+					io.read_line
+					Result.set_description (io.last_string.to_string_32)
+				end
 
-					if attached args.package_archive_file as l_file then
-						Result.set_archive (l_file)
+				if attached args.package_archive_file as l_file then
+					Result.set_archive (l_file)
+				else
+					if Result.has_source_or_archive then
+							-- Do no overwrite previous source or archive value!
 					elseif attached args.package_archive_source as l_src then
 						Result.set_source (l_src)
 					elseif not args.is_batch then
@@ -293,27 +458,16 @@ feature -- Execute
 			-- Return package named `a_name' from `repo'
 			-- if there are more than one, return Void !
 		do
-			if attached repo.packages_associated_with_name (a_name) as lst then
-				if lst.count = 1 then
-					Result := lst.first
-				end
+			if
+				attached repo.packages_associated_with_name (a_name) as lst and then
+				lst.count = 1
+			then
+				Result := lst.first
 			end
 		end
 
---	new_client_session (repo: IRON_REPOSITORY; u,p: READABLE_STRING_32): HTTP_CLIENT_SESSION
---		local
---			cl: LIBCURL_HTTP_CLIENT
---		do
---			create cl.make
---			Result := cl.new_session (repo.uri.string)
---			Result.set_connect_timeout (-1)
---			Result.set_timeout (50)
---			Result.set_is_insecure (False)
---			Result.set_credentials (u, p)
---		end
-
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

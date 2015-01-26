@@ -14,37 +14,19 @@ note
 
 		]"
 	author: ""
-	date: "$Date: 2013-07-03 18:11:55 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92771 $"
+	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
+	revision: "$Revision: 95181 $"
 
 class
 	IRON_INSTALL_ARGUMENT_PARSER
 
 inherit
 	IRON_ARGUMENT_MULTI_PARSER
-		rename
-			make as make_parser
-		end
 
 	IRON_INSTALL_ARGUMENTS
 
 create
 	make
-
-feature {NONE} -- Initialization
-
-	make (a_task: IRON_TASK)
-			-- Initialize argument parser
-		do
-			task := a_task
-			make_parser (False, True)
-			set_argument_source (a_task.argument_source)
-			is_using_builtin_switches := not is_verbose_switch_used
---			set_is_using_separated_switch_values (False)
---			set_non_switched_argument_validator (create {ARGUMENT_DIRECTORY_VALIDATOR})
-		end
-
-	task: IRON_TASK
 
 feature -- Access
 
@@ -54,10 +36,31 @@ feature -- Access
 			Result := has_option (all_switch)
 		end
 
+	setup_execution_enabled: BOOLEAN
+			-- Allowing execution of scripts during installation?
+			-- Default is True
+		do
+			if has_option (setup_execution_ignored_switch) then
+				Result := has_option (setup_execution_enabled_switch)
+			else
+				Result := True
+			end
+		end
+
 	ignoring_cache: BOOLEAN
 			-- <Precursor>
 		do
 			Result := has_option (no_cache_switch)
+		end
+
+	dependencies_included: BOOLEAN
+			-- <Precursor>
+		do
+			if has_option (dep_excluded_switch) then
+				Result := not has_option (dep_included_switch)
+			else
+				Result := True
+			end
 		end
 
 	resources: LIST [IMMUTABLE_STRING_32]
@@ -87,24 +90,37 @@ feature -- Access
 			end
 		end
 
-feature {NONE} -- Usage
-
-	name: IMMUTABLE_STRING_32
+	for_ecf_file: detachable PATH
 		once
-			create Result.make_from_string_general ({IRON_CONSTANTS}.executable_name + " " + task.name)
+			if
+				has_option (for_ecf_switch) and then
+				attached option_of_name (for_ecf_switch) as l_ecf
+			then
+				create Result.make_from_string (l_ecf.value)
+			end
+		end
+
+	target_name: detachable READABLE_STRING_32
+		once
+			if
+				has_option (target_switch) and then
+				attached option_of_name (target_switch) as tgt
+			then
+				Result := tgt.value
+			end
 		end
 
 feature {NONE} -- Usage
 
 	non_switched_argument_name: IMMUTABLE_STRING_32
 		once
-			create Result.make_from_string ({STRING_32} "package name, id or uri")
+			create Result.make_from_string ({STRING_32} "package_reference")
 		end
 
 	non_switched_argument_description: IMMUTABLE_STRING_32
 			--  <Precursor>
 		once
-			create Result.make_from_string ({STRING_32} "Package name, id or full url")
+			create Result.make_from_string ({STRING_32} "Package name, id, uri or full url")
 		end
 
 	non_switched_argument_type: IMMUTABLE_STRING_32
@@ -118,21 +134,34 @@ feature {NONE} -- Switches
 	switches: ARRAYED_LIST [ARGUMENT_SWITCH]
 			-- Retrieve a list of switch used for a specific application
 		once
-			create Result.make (2)
+			create Result.make (5)
 			Result.extend (create {ARGUMENT_SWITCH}.make (file_switch, "Package file", True, True))
 			Result.extend (create {ARGUMENT_SWITCH}.make (all_switch, "Install all available packages", True, False))
-			Result.extend (create {ARGUMENT_SWITCH}.make (no_cache_switch, "Ignore cache and always download iron package.", True, False))
-			add_verbose_switch (Result)
+			Result.extend (create {ARGUMENT_SWITCH}.make (no_cache_switch, "Ignore cache and always download iron package?", True, False))
+			Result.extend (create {ARGUMENT_SWITCH}.make (dep_included_switch, "Also install the package dependencies?", True, False))
+			Result.extend (create {ARGUMENT_SWITCH}.make (dep_excluded_switch, "Ignore the package dependencies?", True, False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (for_ecf_switch, "Install package used by the Eiffel Configuration File passed as argument.", True, False, "ecf_file", "ECF file", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (target_switch, "Optional target information to precise value passed with --ecf option", True, False, "target_name", "ECF target name", False))
+			Result.extend (create {ARGUMENT_SWITCH}.make (setup_execution_enabled_switch, "Enable execution of package installation setup? (Default:enabled)", True, False))
+			Result.extend (create {ARGUMENT_SWITCH}.make (setup_execution_ignored_switch, "Ignore execution of package installation setup?", True, False))
+			fill_argument_switches (Result)
 			add_simulation_switch (Result)
 			add_batch_interactive_switch (Result)
 		end
 
 	file_switch: STRING = "f|file"
+	for_ecf_switch: STRING = "ecf"
+	target_switch: STRING = "target"
 	all_switch: STRING = "a|all"
 	no_cache_switch: STRING = "no_cache"
+	setup_execution_enabled_switch: STRING = "s|setup"
+	setup_execution_ignored_switch: STRING = "S|ignore_setup"
+
+	dep_included_switch: STRING = "d|include_dependencies"
+	dep_excluded_switch: STRING = "D|no_dependency"
 
 ;note
-	copyright:	"Copyright (c) 1984-2013, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

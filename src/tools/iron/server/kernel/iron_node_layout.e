@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_LAYOUT}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-02-05 17:37:55 +0100 (mer., 05 févr. 2014) $"
+	revision: "$Revision: 94193 $"
 
 class
 	IRON_NODE_LAYOUT
@@ -89,9 +89,20 @@ feature -- Access: database
 
 feature -- Access: internal
 
+	config_path: PATH
+			-- Configuration file path.
+		once
+			Result := path.extended ("config")
+		end
+
 	binaries_path: PATH
 		once
 			Result := path.extended ("bin")
+		end
+
+	logs_path: PATH
+		once
+			Result := path.extended ("logs")
 		end
 
 	documentation_path: PATH
@@ -105,13 +116,18 @@ feature -- Access: internal
 			Result := path.extended ("html")
 		end
 
+	html_template_path: PATH
+		once
+			Result := path.extended ("template").extended ("html")
+		end
+
 	tmp_path: PATH
 		once
 			Result := path.extended ("tmp")
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

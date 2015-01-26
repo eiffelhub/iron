@@ -1,8 +1,8 @@
 note
-	description : "Objects that ..."
+	description : "Objects that represent an iron package"
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision    : "$Revision: 93492 $"
+	date        : "$Date: 2014-06-03 14:06:25 +0200 (mar., 03 juin 2014) $"
+	revision    : "$Revision: 95222 $"
 
 class
 	IRON_PACKAGE
@@ -33,11 +33,27 @@ feature {NONE} -- Initialization
 			create tags.make (0)
 		end
 
+	make_named (a_id: READABLE_STRING_8; a_name: READABLE_STRING_GENERAL; repo: like repository)
+			-- Initialize current with `a_id', `a_name' and a `repo'.
+		require
+			a_name_valid: not a_name.is_empty
+		do
+			make (a_id, repo)
+			set_name (a_name)
+		end
+
 feature -- Status
 
 	has_id: BOOLEAN
 		do
 			Result := not id.is_empty
+		end
+
+	is_local_working_copy: BOOLEAN
+			-- Is Current package from a file system working-copy repository?
+			-- (i.e: local working-copy repository as opposed to package hosted on remote iron server)
+		do
+			Result := attached {IRON_WORKING_COPY_REPOSITORY} repository
 		end
 
 	has_archive_file_uri: BOOLEAN
@@ -57,13 +73,42 @@ feature -- Comparison
 			-- equal to current object?
 			-- (from ANY)
 		do
-			Result := id ~ other.id
+			if id.is_empty and other.id.is_empty then
+				Result := is_same_package (other)
+			else
+				Result := (id ~ other.id) and (repository.is_same_repository (other.repository))
+			end
+		end
+
+	is_same_package (other: IRON_PACKAGE): BOOLEAN
+		do
+			Result := identifier.same_string (other.identifier) and then (repository.is_same_repository (other.repository))
 		end
 
 	is_named (a_name: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is package named `a_name' ?
+		local
+			s: detachable READABLE_STRING_32
 		do
-			if a_name /= Void and attached name as l_name then
-				Result := a_name.is_case_insensitive_equal (l_name)
+			if a_name /= Void then
+				s := name
+				if s /= Void then
+					Result := a_name.is_case_insensitive_equal (s)
+				end
+			end
+		end
+
+	is_identified_by (a_identifier: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is package identified by `a_identifier' ?
+			-- i.e is identifier same as `a_identifier'?
+		local
+			s: detachable READABLE_STRING_32
+		do
+			if a_identifier /= Void then
+				s := identifier
+				if s /= Void then
+					Result := a_identifier.is_case_insensitive_equal (s)
+				end
 			end
 		end
 
@@ -80,52 +125,135 @@ feature -- Access
 	repository: IRON_REPOSITORY
 			-- Associated repository
 
-	human_identifier: STRING_32
+	identifier: READABLE_STRING_32
+			-- Safe package name
 		do
-			create Result.make_from_string (repository.url)
-			Result.append_character (' ')
 			if attached name as l_name then
-				Result.append (l_name)
-				debug
-					Result.append_character (' ')
-					Result.append_string_general (id)
+				Result := l_name
+			else
+				Result := id.to_string_32
+			end
+		end
+
+	location: URI
+			-- Associated URI.
+		do
+			create Result.make_from_uri (repository.location)
+			if attached associated_paths as l_paths and then not l_paths.is_empty then
+				across
+					l_paths.first.split ('/') as ic
+				loop
+					Result.add_unencoded_path_segment (ic.item)
 				end
 			else
+				Result.add_unencoded_path_segment (identifier)
+			end
+		end
+
+	human_identifier: STRING_32
+		local
+			l_title: like title
+			l_repo_location: READABLE_STRING_8
+		do
+			l_repo_location := repository.location_string
+			l_title := title
+
+			create Result.make (l_repo_location.count + 10)
+			if attached name as l_name then
+				debug
+					Result.append_string_general (id)
+					Result.append_character (' ')
+				end
+
+				Result.append (l_name)
+			else
 				Result.append_string_general (id)
+			end
+			Result.append_character (' ')
+			Result.append_character ('(')
+			Result.append (l_repo_location)
+			Result.append_character (')')
+
+			if l_title /= Void then
+				Result.append_character (' ')
+				Result.append_character ('"')
+				Result.append_string_general (l_title)
+				Result.append_character ('"')
 			end
 
 			debug
 				across
 					associated_paths as c
 				loop
-					Result.append (repository.url)
+					Result.append (repository.location_string)
 					Result.append (c.item)
 					Result.append_character (' ')
 				end
 			end
-
 		end
 
 	id: IMMUTABLE_STRING_8
+			-- Unique identifier.
+			--| UUID
 
 	name: detachable READABLE_STRING_32
+			-- Optional unique friendly identifier.
+
+	title: detachable READABLE_STRING_32
+			-- Optional associated title for UI.
 
 	description: detachable READABLE_STRING_32
 
+	associated_paths: ARRAYED_LIST [READABLE_STRING_8]
+			-- Associated path on the repositories.
+			--| For local working copy repository, the first path is used to locate package inside repository
+
+	tags: ARRAYED_LIST [READABLE_STRING_32]
+			-- Tags
+
+feature -- Access: archive
+
 	archive_uri: detachable URI
+			-- URI of the associated archive file.
 
 	archive_path: detachable PATH
+			-- Location of the associated archive file.
 		do
 			if has_archive_file_uri and then attached archive_uri as l_uri then
 				Result := uri_to_path (l_uri)
 			end
 		end
 
-	associated_paths: ARRAYED_LIST [READABLE_STRING_8]
-			-- Associated path on the repositories
+	archive_revision: NATURAL
+			-- Associated archive revision.
+			--| for now, only apply to remote web iron server.
 
-	tags: ARRAYED_LIST [READABLE_STRING_32]
-			-- Tags
+	archive_hash: detachable READABLE_STRING_8
+			-- Hash of the archive file.
+
+	archive_size: INTEGER
+			-- Size of the archive file in octects.			
+
+feature {NONE} -- Basic operation: archive
+
+	get_archive_hash
+			-- Get `archive_hash' from `archive_path'.
+		local
+			sha1: SHA1
+			f: RAW_FILE
+		do
+			archive_hash := Void
+			if attached archive_path as p then
+				create f.make_with_path (p)
+				if f.exists and then f.is_readable then
+					f.open_read
+					create sha1.make
+					sha1.update_from_io_medium (f)
+					f.close
+					archive_hash := "SHA1:" + sha1.digest_as_string
+				end
+			end
+		end
 
 feature -- Access: items	
 
@@ -192,20 +320,41 @@ feature -- Change
 
 	set_name (v: detachable READABLE_STRING_GENERAL)
 		do
-			if v /= Void then
+			if v /= Void and then not v.is_empty then
 				name := v.to_string_32
 			else
 				name := Void
 			end
 		end
 
+	set_title (v: detachable READABLE_STRING_GENERAL)
+		do
+			if v /= Void and then not v.is_empty then
+				title := v.to_string_32
+			else
+				title := Void
+			end
+		end
+
 	set_description (v: detachable READABLE_STRING_GENERAL)
 		do
-			if v /= Void then
+			if v /= Void and then not v.is_empty then
 				description := v.to_string_32
 			else
 				description := Void
 			end
+		end
+
+	set_archive_revision (v: NATURAL)
+			-- Set `archive_revision' to `v'.
+		do
+			archive_revision := v
+		end
+
+	set_archive_size (v: INTEGER)
+			-- Set `archive_size' to `v'.
+		do
+			archive_size := v
 		end
 
 	set_archive_uri (v: detachable READABLE_STRING_GENERAL)
@@ -215,8 +364,35 @@ feature -- Change
 			if v /= Void then
 				create iri.make_from_string (v)
 				archive_uri := iri.to_uri
+				get_archive_hash
 			else
 				archive_uri := Void
+				archive_hash := Void
+			end
+		end
+
+	set_archive_path (p: detachable PATH)
+		local
+			path_uri: PATH_URI
+		do
+			if p = Void then
+				set_archive_uri (Void)
+			else
+				create path_uri.make_from_path (p)
+				if path_uri.is_valid then
+					set_archive_uri (path_uri.string)
+				else
+					set_archive_uri (Void)
+				end
+			end
+		end
+
+	set_archive_hash (v: detachable READABLE_STRING_GENERAL)
+		do
+			if v /= Void and then v.is_valid_as_string_8 then
+				archive_hash := v.to_string_8
+			else
+				archive_hash := Void
 			end
 		end
 
@@ -228,19 +404,27 @@ feature {NONE} -- Implementation
 		local
 			l_path: READABLE_STRING_32
 			iri: IRI
+			path_uri: PATH_URI
 		do
-			create iri.make_from_uri (u)
-			l_path := iri.decoded_path
-			if {PLATFORM}.is_windows then
-				if l_path.starts_with ("/") then
+			create path_uri.make_from_file_uri (u)
+			if path_uri.is_valid then
+				Result := path_uri.file_path
+			else
+					-- Old code
+				create iri.make_from_uri (u)
+				l_path := iri.decoded_path
+				if
+					{PLATFORM}.is_windows and then
+					l_path.starts_with ("/")
+				then
 					l_path := l_path.substring (2, l_path.count)
 				end
+				create Result.make_from_string (l_path)
 			end
-			create Result.make_from_string (l_path)
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

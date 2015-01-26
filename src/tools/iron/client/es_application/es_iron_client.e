@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {ES_IRON_CLIENT}."
 	author: ""
-	date: "$Date: 2013-05-24 20:00:56 +0200 (ven., 24 mai 2013) $"
-	revision: "$Revision: 92594 $"
+	date: "$Date: 2014-04-28 18:17:36 +0200 (lun., 28 avr. 2014) $"
+	revision: "$Revision: 94918 $"
 
 class
 	ES_IRON_CLIENT
@@ -35,6 +35,13 @@ inherit
 			{NONE} all
 		end
 
+	EIFFEL_CONSTANTS
+		rename
+			print as print_any
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -43,7 +50,8 @@ feature {NONE} -- Initialization
 	initialize_iron (a_iron: IRON)
 			-- Initialize `a_iron' if needed
 		local
-			repo: IRON_REPOSITORY
+			repo: IRON_WEB_REPOSITORY
+			l_version: STRING
 		do
 			if
 				a_iron.catalog_api.repositories.is_empty and then
@@ -51,10 +59,15 @@ feature {NONE} -- Initialization
 			then
 					-- Initialize default repo
 				print ("First initialization with default repository...%N")
-				create repo.make (create {URI}.make_from_string ("http://iron.eiffel.com/"), {EIFFEL_CONSTANTS}.major_version.out + "." + {EIFFEL_CONSTANTS}.minor_version.out)
-				print (m_registering_repository ("iron", repo.url))
+				create l_version.make (5)
+				l_version.append (two_digit_minimum_major_version)
+				l_version.append_character ('.')
+				l_version.append (two_digit_minimum_minor_version)
+
+				create repo.make_from_version_uri (create {URI}.make_from_string ("https://iron.eiffel.com/" + l_version))
+				print (m_registering_repository (repo.location_string))
 				io.put_new_line
-				a_iron.catalog_api.register_repository ("iron", repo)
+				a_iron.catalog_api.register_repository (repo)
 
 				print (m_updating_repositories)
 				io.put_new_line
@@ -66,15 +79,19 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	iron_layout: ES_IRON_LAYOUT
+		local
+			lay: EC_EIFFEL_LAYOUT
 		do
 			if not is_eiffel_layout_defined then
-				set_eiffel_layout (create {EC_EIFFEL_LAYOUT})
+				create lay
+				lay.check_environment_variable
+				set_eiffel_layout (lay)
 			end
 			create Result.make (eiffel_layout)
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

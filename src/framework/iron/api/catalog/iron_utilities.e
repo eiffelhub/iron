@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_UTILITIES}."
 	author: ""
-	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93492 $"
+	date: "$Date: 2014-06-03 15:41:28 +0200 (mar., 03 juin 2014) $"
+	revision: "$Revision: 95223 $"
 
 class
 	IRON_UTILITIES
@@ -36,27 +36,19 @@ feature -- Archiving
 				if {PLATFORM}.is_windows then
 					p := p.appended_with_extension ("bat")
 				end
-				Result.append_character ('%"')
-				Result.append (p.name)
-				Result.append_character ('%"')
+					-- script filename
+				Result.append (safe_path_name_in_script (p))
 				Result.append_character (' ')
-				Result.append_character ('%"')
-				Result.append (a_source.name)
-				Result.append_character ('%"')
+				Result.append (safe_path_name_in_script (a_source))
 				if attached a_archive.entry as e then
 					Result.append_character (' ')
-					Result.append_character ('%"')
-					Result.append (a_archive.parent.name)
-					Result.append_character ('%"')
+					Result.append (safe_path_name_in_script (a_archive.parent))
 
 					Result.append_character (' ')
-					Result.append_character ('%"')
-					Result.append (e.name)
-					Result.append_character ('%"')
+					Result.append (safe_path_name_in_script (e))
 				else
 					Result.append_string_general (" . ")
-					Result.append_character ('%"')
-					Result.append (a_archive.name)
+					Result.append (safe_path_name_in_script (a_archive))
 					Result.append_character ('%"')
 				end
 			end
@@ -94,7 +86,8 @@ feature -- Archiving
 			end
 		end
 
-	build_package_archive (a_package: detachable IRON_PACKAGE; a_folder: PATH; a_target_file: PATH; a_layout: IRON_LAYOUT)
+	build_package_archive (a_package: detachable IRON_PACKAGE; a_folder: PATH; a_target_file: PATH; a_layout: IRON_LAYOUT): detachable IRON_ARCHIVE
+			--| note: this also update `a_package.archive...' data.
 		require
 			folder_exists: (create {FILE_UTILITIES}).directory_path_exists (a_folder)
 		local
@@ -104,7 +97,13 @@ feature -- Archiving
 			cmd: STRING_32
 			p: PATH
 			f: detachable RAW_FILE
+			l_id: READABLE_STRING_8
 		do
+			if a_package /= Void then
+				l_id := a_package.id
+			else
+				l_id := ""
+			end
 			p := a_folder.absolute_path
 			create d.make_with_path (p)
 			if d.exists then
@@ -115,26 +114,24 @@ feature -- Archiving
 				f := Void
 
 				create proc_fact
-				cmd := build_package_archive_command (a_folder, a_target_file.absolute_path, a_layout)
+				cmd := build_package_archive_command (a_folder.absolute_path, a_target_file.absolute_path, a_layout)
 				debug
 					print (cmd + "%N")
 				end
 				proc := proc_fact.process_launcher_with_command_line (cmd, p.name)
-				proc.redirect_output_to_file (".tmp.output.proc")
+				proc.redirect_output_to_file (".tmp.output.proc." + l_id)
 				proc.redirect_error_to_same_as_output
 				proc.launch
 				if proc.launched then
 					proc.wait_for_exit
 				end
-				create f.make_with_name (".tmp.output.proc")
+				create f.make_with_name (".tmp.output.proc." + l_id)
 				delete_file (f)
 
-				-- target archive file.
-				create f.make_with_path (a_target_file)
-				if f.exists then
-					if a_package /= Void then
-						a_package.set_archive_uri (path_to_uri_string (a_target_file))
-					end
+					-- target archive file.
+				create Result.make (a_target_file)
+				if not Result.file_exists then
+					Result := Void
 				end
 			end
 		end
@@ -207,13 +204,51 @@ feature -- Archiving
 feature -- URI
 
 	path_to_uri_string (p: PATH): STRING_32
+		local
+			path_uri: PATH_URI
 		do
-			create Result.make_from_string (p.absolute_path.canonical_path.name)
-			if {PLATFORM}.is_windows then
-				Result.replace_substring_all ("\", "/")
-				Result.prepend ("/")
+			create path_uri.make_from_path (p)
+			if path_uri.is_valid then
+				Result := path_uri.string
+			else
+				create Result.make_from_string (p.absolute_path.canonical_path.name)
+				if {PLATFORM}.is_windows then
+					Result.replace_substring_all ("\", "/")
+					Result.prepend ("/")
+				end
+				Result := {STRING_32} "file://" + Result
 			end
-			Result := {STRING_32} "file://" + Result
+		end
+
+feature -- Helpers
+
+	safe_path_name_in_script (p: PATH): STRING_32
+		local
+			i,n: INTEGER
+			b: BOOLEAN
+		do
+			create Result.make_from_string (p.name)
+			if Result.is_empty then
+				Result := {STRING_32} ""
+			elseif Result[1] = '%"' then
+				if Result[Result.count] /= '%"' then
+					Result.append_character ('%"')
+				end
+			else
+				from
+					i := 1
+					n := Result.count
+				until
+					i > n or b
+				loop
+					b := Result[i].is_space
+					i := i + 1
+				end
+				if b then
+					Result.prepend_character ('%"')
+					Result.append_character ('%"')
+				end
+			end
 		end
 
 feature -- File and date
@@ -232,7 +267,7 @@ feature -- File and date
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

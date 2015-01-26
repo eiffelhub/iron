@@ -2,11 +2,14 @@ note
 	description: "[
 				This represents an iron node (i.e server)
 			]"
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-02-05 17:37:55 +0100 (mer., 05 févr. 2014) $"
+	revision: "$Revision: 94193 $"
 
 class
 	IRON_NODE
+
+inherit
+	IRON_NODE_FORWARD_OBSERVER
 
 create
 	make
@@ -17,6 +20,7 @@ feature {NONE} -- Initialization
 		do
 			database := db
 			layout := a_layout
+			create config.make (a_layout.config_path)
 		end
 
 feature -- Access
@@ -25,6 +29,8 @@ feature -- Access
 		do
 			Result := database.is_available
 		end
+
+	config: IRON_NODE_CONFIG
 
 	database: IRON_NODE_DATABASE
 
@@ -62,61 +68,6 @@ feature -- Visitor
 	accept (vis: IRON_NODE_VISITOR)
 		do
 			vis.visit_node (Current)
-		end
-
-feature {NONE} -- Observers
-
-	observers: detachable ARRAYED_LIST [IRON_NODE_OBSERVER]
-
-feature -- Observers	
-
-	notify_user_updated (u: IRON_NODE_USER; flag_is_new: BOOLEAN)
-		do
-			if attached observers as lst then
-				across
-					lst as c
-				loop
-					c.item.on_user_updated (u, flag_is_new)
-				end
-			end
-		end
-
-	notify_package_updated (p: IRON_NODE_PACKAGE; flag_is_new: BOOLEAN)
-		do
-			if attached observers as lst then
-				across
-					lst as c
-				loop
-					c.item.on_package_updated (p, flag_is_new)
-				end
-			end
-		end
-
-feature -- Observers
-
-	register_observer (o: IRON_NODE_OBSERVER)
-		local
-			obs: like observers
-		do
-			obs := observers
-			if obs = Void then
-				create obs.make (1)
-				observers := obs
-			end
-			obs.force (o)
-		end
-
-	unregister_observer (o: IRON_NODE_OBSERVER)
-		local
-			obs: like observers
-		do
-			obs := observers
-			if obs /= Void then
-				obs.prune_all (o)
-				if obs.is_empty then
-					observers := Void
-				end
-			end
 		end
 
 feature -- Access: api url
@@ -294,7 +245,7 @@ feature -- Encoders
 
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

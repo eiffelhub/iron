@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INSTALLATION_API}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2014-09-17 11:01:58 +0200 (mer., 17 sept. 2014) $"
+	revision: "$Revision: 95768 $"
 
 class
 	IRON_INSTALLATION_API
@@ -21,50 +21,267 @@ feature {NONE} -- Initialization
 	initialize
 		do
 			Precursor
-			create {ARRAYED_LIST [IRON_PACKAGE]} installed_packages.make (0)
-			load_installed_packages
+			create db.make (layout)
 		end
 
-	load_installed_packages
-		local
-			p: PATH
-			vis: IRON_FS_PACKAGE_INFO_DIRECTORY_ITERATOR
-			lst: ARRAYED_LIST [PATH]
+feature {IRON_EXPORTER} -- Storage
+
+	db: IRON_CLIENT_DB
+
+feature {NONE} -- Internal	
+
+	internal_installed_packages: detachable like installed_packages
+
+	internal_available_packages: detachable like available_packages
+
+feature -- Access
+
+	installed_packages_count: INTEGER
+			-- Number of installed packages.
 		do
-			p := layout.packages_path
-			create lst.make (10)
-			create vis.make (lst)
-			vis.scan_folder (p.absolute_path.canonical_path)
-			across
-				lst as c
-			loop
-				if attached file_content (c.item) as s then
-					if attached repo_package_from_json_string (s) as l_package then
-						installed_packages.force (l_package)
+			Result := installed_packages.count
+		end
+
+	installed_package (a_package_name: READABLE_STRING_GENERAL; a_skip_cache: BOOLEAN): detachable IRON_PACKAGE
+			-- Installed package `a_package_name' if any.
+			-- note: this is an optimized query.
+		do
+			if a_skip_cache then
+				Result := db.quick_installed_package (a_package_name)
+			elseif attached installed_packages as lst then
+				across
+					lst as p
+				until
+					Result /= Void
+				loop
+					if p.item.is_identified_by (a_package_name) then
+						Result := p.item
 					end
 				end
 			end
 		end
 
-feature -- Access
+	installed_packages: LIST [IRON_PACKAGE]
+			-- List of installed package represented as a list of package object.
+		local
+			res: like internal_installed_packages
+		do
+			res := internal_installed_packages
+			if res = Void then
+				res := db.installed_packages
+				internal_installed_packages := res
+			end
+			Result := res
+		end
+
+	unexpected_installed_packages: LIST [IRON_PACKAGE]
+			-- List of unexpected installed packages.
+			-- i.e: installed packages without any associated registered repository.
+		local
+			p: IRON_PACKAGE
+			l_repositories: LIST [IRON_REPOSITORY]
+		do
+			l_repositories := db.repositories
+			create {ARRAYED_LIST [IRON_PACKAGE]} Result.make (0)
+			across
+				installed_packages as ic
+			loop
+				p := ic.item
+				if across l_repositories as repo_ic some p.repository.is_same_repository (repo_ic.item) end then
+						-- Ok
+				else
+						-- no associated registered repository !!
+					Result.force (p)
+				end
+			end
+		end
+
+	available_packages: LIST [IRON_PACKAGE]
+			-- Associated path indexed by package name.
+			-- It does not include conflicting packages.
+		local
+			res: like internal_available_packages
+		do
+			res := internal_available_packages
+			if res = Void then
+				res := db.available_packages
+				internal_available_packages := res
+			end
+			Result := res
+		end
+
+	repositories: LIST [IRON_REPOSITORY]
+			-- List of registered repositories.
+		do
+			Result := db.repositories
+		end
+
+feature -- Change
 
 	refresh
 			-- Refresh associated data.
 		do
-			installed_packages.wipe_out
-			load_installed_packages
+			refresh_installed_packages
+			refresh_available_packages
 		end
 
-	is_installed (a_package: IRON_PACKAGE): BOOLEAN
+	refresh_installed_packages
+			-- Refresh associated data.
+		do
+			internal_installed_packages := Void
+		end
+
+	refresh_available_packages
+			-- Refresh associated data.
+		do
+			internal_available_packages := Void
+		end
+
+feature -- Query		
+
+	is_available (a_uri: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is there an available package associated with `a_uri'?
+		do
+			Result := available_package_name_for_uri (a_uri) /= Void
+		end
+
+	available_package_name_for_uri (a_uri: READABLE_STRING_GENERAL): detachable READABLE_STRING_GENERAL
+			-- Name of eventual available package associated with `a_uri'?
+		local
+			iri: IRI
+			p: INTEGER
+			l_path: READABLE_STRING_8
+			l_package_name: READABLE_STRING_32
+			l_project_path: READABLE_STRING_8
+			l_package_full_path: STRING_8
+			l_repo_uri_string: READABLE_STRING_8
+			l_package: IRON_PACKAGE
+		do
+			if
+				a_uri.starts_with ("http://") or
+				a_uri.starts_with ("https://") or
+				a_uri.starts_with ("file://")
+			then
+				across
+					available_packages as ic
+				until
+					Result /= Void
+				loop
+					l_package := ic.item
+					l_repo_uri_string := l_package.repository.location_string
+					if a_uri.starts_with (l_repo_uri_string) then
+						across
+							l_package.associated_paths as path_ic
+						until
+							Result /= Void -- order matters
+						loop
+							l_package_full_path := l_repo_uri_string + path_ic.item
+							if a_uri.same_string (l_package_full_path) then
+								Result := l_package.identifier
+							end
+						end
+					end
+				end
+			elseif a_uri.starts_with ("iron:") then
+				create iri.make_from_string (a_uri)
+				l_path := iri.uri_path
+				p := l_path.index_of (':', 1)
+				if p > 0 then
+					l_package_name := l_path.head (p - 1)
+					l_project_path := l_path.substring (p + 1, l_path.count)
+					across
+						available_packages as ic
+					until
+						Result /= Void -- order matters
+					loop
+						l_package := ic.item
+						if l_package.is_identified_by (l_package_name) then
+							Result := l_package.identifier
+						end
+					end
+				else
+						-- The tail could be the packagename, and there may be a default .ecf ... depending on the void-safety level.
+						-- status: idea not implemented.
+				end
+			end
+		end
+
+	is_installed (a_uri: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			Result := package_associated_with_uri (a_uri) /= Void
+		end
+
+	is_package_installed (a_package: IRON_PACKAGE): BOOLEAN
 			-- Is `a_package' installed?
 		local
 			d: DIRECTORY
 		do
-			if attached package_installation_path (a_package) as p then
-				create d.make_with_path (p)
-				Result := d.exists and then not d.is_empty
+			across
+				installed_packages as ic
+			until
+				Result
+			loop
+				Result := a_package.is_same_package (ic.item)
+			end
+			if Result then
+					-- Also check that package is really installed on disk!
+				if attached package_installation_path (a_package) as p then
+					create d.make_with_path (p)
+					Result := d.exists and then not d.is_empty
+				end
 			end
 		end
+
+	conflicting_available_package (p: IRON_PACKAGE): detachable IRON_PACKAGE
+			-- Return eventual available or installed package with same identifier as `p'
+			-- and which exists with priority over `p'.
+		local
+			l_identifier: READABLE_STRING_GENERAL
+		do
+			l_identifier := p.identifier
+			across
+				available_packages as ic
+			until
+				Result /= Void
+			loop
+				if ic.item.is_identified_by (l_identifier) then
+					Result := ic.item
+				end
+			end
+			if Result /= Void and then p.is_same_package (Result) then
+					-- It has top priority
+				Result := Void
+			end
+		end
+
+	projects_from_installed_package (a_package: IRON_PACKAGE): ARRAYED_LIST [PATH]
+		require
+			is_package_installed (a_package)
+		local
+			p: detachable PATH
+			l_scanner: IRON_ECF_SCANNER
+			p_name: READABLE_STRING_32
+			s: STRING_32
+		do
+			p := package_installation_path (a_package)
+			if p = Void then
+				create Result.make (0)
+			else
+				create l_scanner.make
+				l_scanner.process_directory (p)
+				create Result.make (l_scanner.items.count)
+				p_name := p.name
+				across
+					l_scanner.items as ic
+				loop
+					s := ic.item.name
+					s.remove_head (p_name.count + 1)
+					Result.force (create {PATH}.make_from_string (s))
+				end
+			end
+		end
+
+feature -- Installed package		
 
 	package_installation_path (a_package: IRON_PACKAGE): detachable PATH
 			-- Path to local installation folder related to `a_package'
@@ -73,7 +290,37 @@ feature -- Access
 			Result := layout.package_installation_path (a_package)
 		end
 
+	packages_conflicting_with_package (a_package: IRON_PACKAGE): detachable LIST [IRON_PACKAGE]
+			-- Installed packages that are conflicting with `a_package'.
+			--| note: in case of conflict the declaration order of the repositories is taken into account.
+		require
+			has_name: a_package.name /= Void
+		do
+			if attached a_package.name as l_name then
+				Result := packages_associated_with_name (l_name)
+				if Result /= Void then
+					from
+						Result.start
+					until
+						Result.after
+					loop
+						if a_package.is_same_package (Result.item) then
+							Result.remove
+						else
+							Result.forth
+						end
+					end
+					if Result.is_empty then
+						Result := Void
+					end
+				end
+			end
+		ensure
+			Result /= Void implies Result.count > 0
+		end
+
 	package_associated_with_id (a_id: READABLE_STRING_GENERAL): detachable IRON_PACKAGE
+			-- Installed package associated with id `a_id'.
 		do
 			across
 				installed_packages as p
@@ -87,6 +334,7 @@ feature -- Access
 		end
 
 	packages_associated_with_name (a_name: READABLE_STRING_GENERAL): detachable LIST [IRON_PACKAGE]
+			-- Installed package associated with name `a_name'.
 		local
 			l_package: detachable IRON_PACKAGE
 		do
@@ -96,7 +344,7 @@ feature -- Access
 				installed_packages as p
 			loop
 				l_package := p.item
-				if l_package.is_named (a_name) then
+				if l_package.is_identified_by (a_name) then
 					Result.force (l_package)
 				end
 			end
@@ -107,31 +355,43 @@ feature -- Access
 		end
 
 	package_associated_with_uri (a_uri: READABLE_STRING_GENERAL): detachable IRON_PACKAGE
+			-- Installed package associated with uri `a_uri'.
 		local
 			s: STRING
-			repo_url: READABLE_STRING_8
+			l_loc: READABLE_STRING_8
 			iri: IRI
-			l_uri: READABLE_STRING_8
+			l_uri: detachable URI
+			l_uri_string: READABLE_STRING_8
 		do
-			create iri.make_from_string (a_uri)
-			l_uri := iri.uri_string
-
-			if attached installed_packages as lst then
-				across
-					lst as p
-				until
-					Result /= Void
-				loop
-					repo_url := p.item.repository.url
-					if l_uri.starts_with (repo_url) then
-						s := l_uri.substring (repo_url.count + 1, l_uri.count)
-						across
-							p.item.associated_paths as pn
-						until
-							Result /= Void
-						loop
-							if s.starts_with (pn.item) then
-								Result := p.item
+			if
+				a_uri.starts_with ("http://") or
+				a_uri.starts_with ("https://") or
+				a_uri.starts_with ("file://")
+			then
+				create iri.make_from_string (a_uri)
+				l_uri := iri.to_uri
+			else
+				create {PATH_URI} l_uri.make_from_path (create {PATH}.make_from_string (a_uri))
+			end
+			if l_uri /= Void and then l_uri.is_valid then
+				l_uri_string := l_uri.string
+				if attached installed_packages as lst then
+					across
+						lst as p
+					until
+						Result /= Void
+					loop
+						l_loc := p.item.repository.location_string
+						if l_uri_string.starts_with (l_loc) then
+							s := l_uri_string.substring (l_loc.count + 1, l_uri_string.count)
+							across
+								p.item.associated_paths as pn
+							until
+								Result /= Void
+							loop
+								if s.starts_with (pn.item) then
+									Result := p.item
+								end
 							end
 						end
 					end
@@ -139,16 +399,47 @@ feature -- Access
 			end
 		end
 
+feature -- Local path		
+
 	local_path_associated_with_uri (a_uri: READABLE_STRING_GENERAL): detachable PATH
+			-- Local path for installed package referenced by `a_uri'.
+		local
+			iri: IRI
+			p: INTEGER
+			l_path: READABLE_STRING_8
+		do
+			if
+				a_uri.starts_with ("http://") or
+				a_uri.starts_with ("https://")
+			then
+				Result := local_path_associated_with_url (a_uri)
+			elseif a_uri.starts_with ("iron:") then
+				create iri.make_from_string (a_uri)
+				l_path := iri.uri_path
+				p := l_path.index_of (':', 1)
+				if p > 0 then
+					Result := local_path_associated_with_relative_uri (l_path.head (p - 1), l_path.substring (p + 1, l_path.count))
+				else
+						-- The tail could be the packagename, and there may be a default .ecf ... depending on the void-safety level.
+						-- status: idea not implemented.
+				end
+			end
+		end
+
+	local_path_associated_with_url (a_url: READABLE_STRING_GENERAL): detachable PATH
+			-- Local path related to eventual installed package in association with url `a_url'.
+			--| note: `a_url' can reference the location of the ecf file.
+			--| example: http://iron.eiffel.com/13.11/com.eiffel/library/text/parser/xml/parser/xml_parser.ecf
+			--| (the package is located at "http://iron.eiffel.com/13.11/com.eiffel/library/text/parser/xml")
 		local
 			s,r: STRING
 			l_pn_item: READABLE_STRING_8
 			l_package: detachable IRON_PACKAGE
-			repo_url: READABLE_STRING_8
+			l_loc: READABLE_STRING_8
 			iri: IRI
 			l_uri: READABLE_STRING_8
 		do
-			create iri.make_from_string (a_uri)
+			create iri.make_from_string (a_url)
 			l_uri := iri.uri_string
 
 			create r.make_empty
@@ -158,9 +449,9 @@ feature -- Access
 				until
 					l_package /= Void
 				loop
-					repo_url := p.item.repository.url
-					if l_uri.starts_with (repo_url) then
-						s := l_uri.substring (repo_url.count + 1, l_uri.count)
+					l_loc := p.item.repository.location_string
+					if l_uri.starts_with (l_loc) then
+						s := l_uri.substring (l_loc.count + 1, l_uri.count)
 						across
 							p.item.associated_paths as pn
 						until
@@ -189,7 +480,23 @@ feature -- Access
 			end
 		end
 
-	installed_packages: LIST [IRON_PACKAGE]
+	local_path_associated_with_relative_uri (a_package_name: READABLE_STRING_GENERAL; a_relative_uri: READABLE_STRING_GENERAL): detachable PATH
+			-- Local path of eventual installed package reference by `a_package_name' and `a_relative_uri'.
+			--| note: `a_url' can reference the location of the ecf file.			
+			--| ex: xml and parser/xml_parser.ecf
+		local
+			l_package: detachable IRON_PACKAGE
+		do
+			l_package := installed_package (a_package_name, False)
+			if l_package /= Void then
+				Result := package_installation_path (l_package)
+				if Result /= Void and then (create {DIRECTORY}.make_with_path (Result)).exists then
+					Result := Result.extended (a_relative_uri)
+				else
+					Result := Void
+				end
+			end
+		end
 
 feature {NONE} -- Implementation
 
@@ -203,9 +510,10 @@ feature {NONE} -- Implementation
 
 invariant
 	installed_packages /= Void
+	available_packages /= Void
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

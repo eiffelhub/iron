@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NAMES}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-26 16:22:07 +0200 (lun., 26 mai 2014) $"
+	revision: "$Revision: 95178 $"
 
 class
 	IRON_NAMES
@@ -24,16 +24,13 @@ feature -- List task
 	tk_package: STRING_32
 		do Result := {STRING_32} "Package" end
 
-	m_repository (a_uri, a_version: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Repository [$1] version=$2", [a_uri, a_version]) end
+	m_repository (a_uri: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Repository [$1]", [a_uri]) end
 
-	m_repository_without_package (a_uri, a_version: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Repository [$1] version=$2 has no package!", [a_uri, a_version]) end
+	m_repository_without_package (a_uri: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Repository [$1] has no package!", [a_uri]) end
 
 feature -- Install task
-
-	tk_simulated: STRING_32
-		do Result := {STRING_32} "simulated" end
 
 	tk_not_found: STRING_32
 		do Result := {STRING_32} "not found" end
@@ -53,17 +50,47 @@ feature -- Install task
 	tk_failed: STRING_32
 		do Result := {STRING_32} "failed !" end
 
+	tk_completed: STRING_32
+		do Result := {STRING_32} "completed" end
+
+	tk_skipped: STRING_32
+		do Result := {STRING_32} "skipped" end
+
+	tk_ignored: STRING_32
+		do Result := {STRING_32} "ignored" end
+
+	tk_simulated: STRING_32
+		do Result := {STRING_32} "simulated" end
+
 	m_installing (s: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Installing %"$1%" ", [s]) end
+		do Result := string_with_args ("Installing [$1] ", [s]) end
+
+	m_installing_dependencies_from_ecf (s: READABLE_STRING_GENERAL; tgt: detachable READABLE_STRING_GENERAL): STRING_32
+		do
+			if tgt /= Void then
+				Result := string_with_args ("Installing package dependencies from configuration file %"$1%" target %"$2%"", [s, tgt])
+			else
+				Result := string_with_args ("Installing package dependencies from configuration file %"$1%"", [s])
+			end
+		end
+
+	m_installing_dependencies_from_ecf_completed: STRING_32
+		do Result := {STRING_32} "completed."	end
+
+	m_setup_installation (s: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Setting up [$1] ", [s]) end
 
 	m_removing (s: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Removing %"$1%" ", [s]) end
+		do Result := string_with_args ("Removing [$1] ", [s]) end
 
 	m_searching (s: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Searching %"$1%" ", [s]) end
+		do Result := string_with_args ("Searching [$1] ", [s]) end
 
 	m_several_packages_for_name (s: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("several packages for name %"$1%"!", [s]) end
+		do Result := string_with_args ("several packages for name [$1]!", [s]) end
+
+	m_conflicting (s: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Conflicting with installed packages:", [s]) end
 
 feature -- Info task
 
@@ -84,11 +111,21 @@ feature -- Repository task
 	m_updating_repositories: STRING_32
 		do Result := {STRING_32} "Updating repositories ..." end
 
-	m_registering_repository (a_name: READABLE_STRING_GENERAL; a_url: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Registering repository %"$1%" [$2] ", [a_name, a_url]) end
+	m_updating_repository (a_repo: IRON_REPOSITORY): STRING_32
+		do Result := string_with_args ("Updating repository [$1] ...", [a_repo.location_string]) end
 
-	m_unregistering_repository (a_name_or_uri: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Un-Registering repository [$1] ", [a_name_or_uri]) end
+	m_registering_repository (a_uri: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Registering repository [$1] ", [a_uri]) end
+
+	m_unregistering_repository (a_uri: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Un-Registering repository [$1] ", [a_uri]) end
+
+	m_invalid_repository_location (a_loc: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Invalid repository location [$1] ", [a_loc]) end
+
+	m_already_registered_repository_location (a_loc: READABLE_STRING_GENERAL): STRING_32
+		do Result := string_with_args ("Repository [$1] is already registered ", [a_loc]) end
+
 
 feature {NONE} -- Implementation
 
@@ -115,7 +152,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

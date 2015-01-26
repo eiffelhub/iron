@@ -1,7 +1,7 @@
 note
 	description: "Authentication filter."
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-04-09 13:25:04 +0200 (mer., 09 avr. 2014) $"
+	revision: "$Revision: 94796 $"
 
 deferred class
 	IRON_NODE_AUTH_FILTER_API_HANDLER [G -> WSF_HANDLER]
@@ -13,6 +13,8 @@ inherit
 		rename
 			set_iron as make
 		end
+
+	SHARED_HTML_ENCODER
 
 feature {NONE} -- Initialization
 
@@ -36,12 +38,18 @@ feature -- Basic operations
 				l_auth /= Void and then
 				attached l_auth.is_basic and then
 				attached l_auth.login as u and then
-				attached l_auth.password as p and then
-				iron.database.is_valid_credential (u, p) and then
-				attached iron.database.user (u) as l_user
+				attached l_auth.password as p
 			then
-				req.set_execution_variable ("{IRON_REPO}.user", l_user)
-				execute_next (req, res)
+				if
+					iron.database.is_valid_credential (u, p) and then
+					attached iron.database.user (u) as l_user
+				then
+					req.set_execution_variable ("{IRON_REPO}.user", l_user)
+					execute_next (req, res)
+				else
+					req.set_execution_variable ("{IRON_REPO}.user", Void)
+					handle_unauthorized ("Unauthorized user " + html_encoder.encoded_string (u), req, res)
+				end
 			else
 				req.set_execution_variable ("{IRON_REPO}.user", Void)
 				handle_unauthorized ("Unauthorized", req, res)
@@ -81,7 +89,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

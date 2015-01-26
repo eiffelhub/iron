@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_MAILER_OBSERVER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-20 16:18:37 +0200 (mar., 20 mai 2014) $"
+	revision: "$Revision: 95123 $"
 
 class
 	IRON_NODE_MAILER_OBSERVER
@@ -49,7 +49,7 @@ feature -- Event
 		do
 			if flag_is_new then
 				create l_body.make_empty
-				l_body.append ("User [" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "] has just been created.%N")
+				l_body.append ("User %"" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "%" has just been created.%N")
 				if attached {READABLE_STRING_GENERAL} a_user.data_item ("activation.url") as l_url then
 					l_body.append ("Please activate your account at ")
 					l_body.append_string_general (l_url)
@@ -59,26 +59,66 @@ feature -- Event
 					l_body.append_string_general (l_code)
 					l_body.append ("] . %N")
 				end
-				on_user_event (a_user, "New user [" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "]", l_body)
+				on_user_event (a_user, "[Iron] New user [" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "]", l_body)
 			else
 				create l_body.make_empty
 				if attached {READABLE_STRING_GENERAL} a_user.data_item ("reset_password.url") as l_url then
-					l_body.append ("User [" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "] requested password reset.%N")
-					l_body.append ("Please follow the link to login and change your password")
+					l_body.append ("User %"" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "%" requested password reset.%N")
+					l_body.append ("Please follow the link to login and change your password ")
 					l_body.append_string_general (l_url)
 					l_body.append (" . %N")
-					on_user_event (a_user, "User [" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "] requested password reset", l_body)
+					on_user_event (a_user, "[Iron] User %"" + utf.utf_32_string_to_utf_8_string_8 (a_user.name) + "%" requested password reset", l_body)
 				end
 			end
 		end
 
 	on_package_updated (p: IRON_NODE_PACKAGE; flag_is_new: BOOLEAN)
+		local
+			utf: UTF_CONVERTER
+			l_body: STRING
+			l_title: STRING
+			m: NOTIFICATION_EMAIL
 		do
-			-- do nothing
+			if flag_is_new then
+				l_title := "[Iron] New package %"" + utf.utf_32_string_to_utf_8_string_8 (p.human_identifier) + "%""
+				l_body := l_title + "%N"
+			else
+				l_title := "[Iron] Updated package %"" + utf.utf_32_string_to_utf_8_string_8 (p.human_identifier) + "%""
+				l_body := l_title + "%N"
+			end
+			if mailer.is_available then
+				create m.make (admin_email, admin_email, l_title, l_body)
+				mailer.process_email (m)
+			end
+		end
+
+	on_version_package_updated (p: IRON_NODE_VERSION_PACKAGE; flag_is_new: BOOLEAN)
+		local
+			utf: UTF_CONVERTER
+			l_body: STRING
+			l_title: STRING
+			m: NOTIFICATION_EMAIL
+		do
+			if flag_is_new then
+				l_title := "[Iron:"+ p.version.value +"] New version package %"" + utf.utf_32_string_to_utf_8_string_8 (p.human_identifier) + "%""
+				l_body := l_title + "%N"
+			else
+				l_title := "[Iron:"+ p.version.value +"] Updated version package %"" + utf.utf_32_string_to_utf_8_string_8 (p.human_identifier) + "%""
+				l_body := l_title + "%N"
+			end
+			if mailer.is_available then
+				create m.make (admin_email, admin_email, l_title, l_body)
+				mailer.process_email (m)
+			end
+		end
+
+	on_version_package_downloaded (p: IRON_NODE_VERSION_PACKAGE)
+			-- <Precursor>
+		do
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

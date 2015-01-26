@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_NODE_HTML_RESPONSE}."
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-01-22 23:17:03 +0100 (jeu., 22 janv. 2015) $"
+	revision: "$Revision: 96523 $"
 
 class
 	IRON_NODE_API_RESPONSE
@@ -224,8 +224,10 @@ feature {WSF_RESPONSE} -- Output
 				end
 				s.prepend (l_title)
 			end
-			s.prepend_character ('{')
-			s.append_character ('}')
+			if s.is_empty or else s[1] /= '{' then
+				s.prepend_character ('{')
+				s.append_character ('}')
+			end
 			h.put_content_type_application_json
 			h.put_content_length (s.count)
 			res.put_header_lines (h)
@@ -234,7 +236,7 @@ feature {WSF_RESPONSE} -- Output
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

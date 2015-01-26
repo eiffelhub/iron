@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {CREATE_PACKAGE_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-12-17 17:33:35 +0100 (mar., 17 déc. 2013) $"
+	revision: "$Revision: 93746 $"
 
 class
 	EDIT_PACKAGE_HANDLER
@@ -41,10 +41,11 @@ feature -- Execution
 		do
 			r := new_response_message (req)
 			if attached package_version_from_id_path_parameter (req, "id") as l_package then
+				r.set_iron_version_package (l_package)
 				r.add_menu ("View", iron.package_version_view_web_page (l_package))
 				f := new_package_edit_form (l_package, req, False)
 				create l_theme.make_with_request (req)
-				r.set_title ("Edit package %"" + iron.html_encoder.general_decoded_string (l_package.human_identifier) + "%"")
+				r.set_title ("Edit package %"" + iron.html_encoder.general_encoded_string (l_package.human_identifier) + "%"")
 				r.set_body (f.to_html (l_theme))
 			else
 				r.set_body ("Missing parameter {id}")

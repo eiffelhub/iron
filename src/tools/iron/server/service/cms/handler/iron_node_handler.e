@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-27 14:17:51 +0100 (mer., 27 nov. 2013) $"
-	revision: "$Revision: 93555 $"
+	date: "$Date: 2015-01-23 00:21:04 +0100 (ven., 23 janv. 2015) $"
+	revision: "$Revision: 96524 $"
 
 deferred class
 	IRON_NODE_HANDLER
@@ -11,6 +11,8 @@ inherit
 	WSF_HANDLER
 
 	WSF_SELF_DOCUMENTED_HANDLER
+
+	SHARED_HTML_ENCODER
 
 feature -- Change
 
@@ -78,17 +80,33 @@ feature -- Access
 	has_permission_to_modify_package (req: WSF_REQUEST; a_package: IRON_NODE_PACKAGE): BOOLEAN
 		do
 			if attached current_user (req) as u then
-				if attached a_package.owner as o then
-					Result := u.same_user (o) or else u.is_administrator
-				else
-					Result := u.is_administrator
-				end
+				Result := user_has_permission_to_modify_package (u, a_package)
 			end
 		end
 
 	has_permission_to_modify_package_version (req: WSF_REQUEST; a_package: IRON_NODE_VERSION_PACKAGE): BOOLEAN
 		do
-			Result := has_permission_to_modify_package (req, a_package.package)
+			if attached current_user (req) as u then
+				Result := user_has_permission_to_modify_package_version (u, a_package)
+			end
+		end
+
+	user_has_permission_to_modify_package (a_user: IRON_NODE_USER; a_package: IRON_NODE_PACKAGE): BOOLEAN
+		do
+			if attached a_package.owner as o then
+				Result := a_user.same_user (o) or else a_user.is_administrator
+			else
+				Result := a_user.is_administrator
+			end
+		end
+
+	user_has_permission_to_modify_package_version (a_user: IRON_NODE_USER; a_package: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+			if attached a_package.owner as o then
+				Result := a_user.same_user (o) or else a_user.is_administrator
+			else
+				Result := a_user.is_administrator
+			end
 		end
 
 feature -- Request: methods
@@ -242,11 +260,14 @@ feature -- Package form
 			f: WSF_FORM
 			f_id: WSF_FORM_HIDDEN_INPUT
 			f_name: WSF_FORM_TEXT_INPUT
+			f_title: WSF_FORM_TEXT_INPUT
 			f_desc: WSF_FORM_TEXTAREA
+			f_tags: WSF_FORM_TEXT_INPUT
 			f_archive: WSF_FORM_FILE_INPUT
 			f_archive_url: WSF_FORM_TEXT_INPUT
 			f_submit: WSF_FORM_SUBMIT_INPUT
 			f_fieldset: WSF_FORM_FIELD_SET
+			s: STRING_32
 		do
 			if vp /= Void then
 				create f.make (req.script_url (iron.package_version_update_page (vp)), "edit_package")
@@ -262,11 +283,26 @@ feature -- Package form
 			f.set_multipart_form_data_encoding_type
 			create f_name.make ("name")
 			f_name.set_label ("Name")
+			f_name.set_size (50)
 			f.extend (f_name)
+
+			create f_title.make ("title")
+			f_title.set_label ("Title")
+			f_title.set_description ("Optional title, if unset, use `name' in user interfaces")
+			f_title.set_size (50)
+			f.extend (f_title)
 
 			create f_desc.make ("description")
 			f_desc.set_label ("Description")
+			f_desc.set_rows (6)
+			f_desc.set_cols (70)
 			f.extend (f_desc)
+
+			create f_tags.make ("tags")
+			f_tags.set_label ("Tags")
+			f_tags.set_description ("Comma separated keywords")
+			f_tags.set_size (50)
+			f.extend (f_tags)
 
 			create f_fieldset.make
 			f_fieldset.set_legend ("Associated Archive")
@@ -278,6 +314,7 @@ feature -- Package form
 			create f_archive_url.make ("archive-url")
 			f_archive_url.set_label ("Get archive from url")
 			f_archive_url.set_description ("If you have trouble uploading the archive file, the server can download from a public URL.")
+			f_archive_url.set_size (50)
 			f_fieldset.extend (f_archive_url)
 
 			if vp /= Void and then vp.has_archive then
@@ -309,8 +346,23 @@ feature -- Package form
 				if attached vp.name as l_name then
 					f_name.set_text_value (l_name)
 				end
+				if attached vp.title as l_title then
+					f_title.set_text_value (l_title)
+				end
 				if attached vp.description as l_description then
 					f_desc.set_text_value (l_description)
+				end
+				if attached vp.tags as l_tags then
+					create s.make_empty
+					across
+						l_tags as ic
+					loop
+						if not s.is_empty then
+							s.append_character (',')
+						end
+						s.append (ic.item)
+					end
+					f_tags.set_text_value (s)
 				end
 			end
 --			if vp /= Void and then vp.has_archive then
@@ -398,7 +450,7 @@ feature -- Package form
 							-- Error
 						create p.make_empty
 						p.set_name (l_name)
-					end					
+					end
 				elseif l_path_id /= Void then
 					fd.report_error ("Missing package id from post!")
 					create p.make (l_path_id)
@@ -412,10 +464,10 @@ feature -- Package form
 				end
 
 				if attached current_user (req) as l_user then
-					if attached p.owner as o and then not o.name.is_case_insensitive_equal (l_user.name) then
-						fd.report_error ("Only owner can modify current package.")
-					else
+					if p.owner = Void then
 						p.set_owner (l_user)
+					elseif not user_has_permission_to_modify_package (l_user, p) then
+						fd.report_error ("Only owner and administrator can modify current package.")
 					end
 				else
 					fd.report_error ("Operation restricted to allowed user.")
@@ -424,23 +476,45 @@ feature -- Package form
 					if attached fd.string_item ("name") as l_name then
 						p.set_name (l_name)
 					end
+					if attached fd.string_item ("title") as l_title then
+						p.set_title (l_title)
+					end
 					if attached fd.string_item ("description") as l_description then
 						p.set_description (l_description)
 					end
+					if attached fd.string_item ("tags") as l_tags then
+						if attached p.tags as p_tags then
+							p_tags.wipe_out
+						end
+						across
+							l_tags.split (',') as tic
+						loop
+							p.add_tag (tic.item)
+						end
+					end
+--					if attached fd.table_item ("links") as l_links then
+--						if attached p.links as p_links then
+--							p_links.wipe_out
+--						end
+--						across
+--							l_links as l_ic
+--						loop
+--							p.add_link (...)
+--						end
+--					end
 				end
 				if has_permission_to_modify_package (req, p) then
 					if not fd.has_error then
 						if p.has_id then
 							iron.database.update_package (p)
-							iron.database.update_version_package (vp)
 
 							m.add_normal_message ("Package updated [" + p.id + "]")
 						else
 							iron.database.update_package (p)
-							iron.database.update_version_package (vp)
 
 							m.add_normal_message ("Package created [" + p.id + "]")
 						end
+						iron.database.update_version_package (vp)
 
 						if attached {WSF_UPLOADED_FILE} fd.item ("archive") as l_file then
 							iron.database.save_uploaded_package_archive (vp, l_file)
@@ -473,14 +547,14 @@ feature -- Factory
 			Result.set_iron_version (iron_version (req))
 			if attached current_user (req) as u then
 				Result.add_menu ("Home", iron.page (Void, ""))
-				Result.add_menu ("Account (" + u.name + ")", iron.page (Void, "/user"))
+				Result.add_menu ("Account (" + html_encoder.encoded_string (u.name) + ")", iron.page (Void, "/user"))
 			else
 				Result.add_menu ("Home", iron.page (Void, ""))
 				Result.add_menu ("Account", iron.page (Void, "/user"))
 			end
 			if has_iron_version (req) then
-				Result.add_menu ("List of packages", iron.package_version_list_web_page (iron_version (req)))
 				Result.add_menu ("New package", iron.package_version_create_web_page (iron_version (req)))
+				Result.add_menu ("All packages", iron.package_version_list_web_page (iron_version (req)))
 			end
 		end
 
@@ -504,7 +578,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
