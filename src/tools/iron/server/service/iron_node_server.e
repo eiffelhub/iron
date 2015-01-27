@@ -1,7 +1,7 @@
 note
 	description: "Main httpd iron server"
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-01-22 22:06:59 +0100 (jeu., 22 janv. 2015) $"
+	revision: "$Revision: 96522 $"
 
 class
 	IRON_NODE_SERVER
@@ -53,7 +53,7 @@ feature {NONE} -- Launch operation
 			launcher.launch (a_service, opts)
 		end
 
-feature {IRON_NODE_SERVICE_I} -- Services		
+feature {IRON_NODE_SERVICE_I} -- Services
 
 	api_service: IRON_NODE_API_SERVICE
 		local
@@ -95,21 +95,7 @@ feature -- Execution
 			-- Execute the filter.
 		local
 			d: HTTP_DATE
---			conneg: SERVER_MEDIA_TYPE_NEGOTIATION
---			t: detachable READABLE_STRING_8
 		do
---			t := "text/html"
---			create conneg.make (t)
---			if attached conneg.preference (<<"text/html", "application/json">>, req.http_accept) as l_variants then
---				if l_variants.is_acceptable then
---					t := l_variants.media_type
---				end
---			end
---			if t = Void then
---				t := "text/html"
---			end
---			if t.same_string ("application/json") then
-
 			create d.make_now_utc
 			res.put_header_line ("Date: " + d.string)
 
@@ -185,10 +171,8 @@ feature -- Router and Filter
 			f.set_next (Current)
 		end
 
-
-
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

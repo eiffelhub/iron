@@ -2,8 +2,8 @@ note
 	description: "[
 				This represents a package on the iron node (i.e server)
 			]"
-	date: "$Date: 2013-11-27 14:17:51 +0100 (mer., 27 nov. 2013) $"
-	revision: "$Revision: 93555 $"
+	date: "$Date: 2014-06-03 15:41:28 +0200 (mar., 03 juin 2014) $"
+	revision: "$Revision: 95223 $"
 
 class
 	IRON_NODE_PACKAGE
@@ -33,7 +33,6 @@ feature {NONE} -- Initialization
 			else
 				create id.make_from_string (a_id)
 			end
-			create {ARRAYED_LIST [READABLE_STRING_32]} tags.make (0)
 		end
 
 feature -- Status
@@ -63,7 +62,8 @@ feature -- Status report
 
 feature -- Access
 
-	human_identifier: READABLE_STRING_32
+	identifier: READABLE_STRING_32
+			-- Safe package name
 		do
 			if attached name as l_name then
 				Result := l_name
@@ -72,11 +72,36 @@ feature -- Access
 			end
 		end
 
+	human_identifier: READABLE_STRING_32
+		local
+			s32: STRING_32
+		do
+			if attached title as l_title then
+				create s32.make_from_string (l_title)
+			else
+				create s32.make_empty
+			end
+			if attached name as l_name then
+				if s32.is_empty then
+					s32.append (l_name)
+				else
+					s32.append (" (")
+					s32.append (l_name)
+					s32.append (")")
+				end
+			elseif s32.is_empty then
+				create s32.make_from_string_general (id)
+			end
+			Result := s32
+		end
+
 	id: IMMUTABLE_STRING_8
 
 	owner: detachable IRON_NODE_USER
 
 	name: detachable READABLE_STRING_32
+
+	title: detachable READABLE_STRING_32
 
 	description: detachable READABLE_STRING_32
 
@@ -84,26 +109,17 @@ feature -- Access
 
 feature -- Tags
 
-	tags: LIST [READABLE_STRING_32]
+	tags: detachable LIST [READABLE_STRING_32]
 
-feature -- Access: archive
+	links: detachable STRING_TABLE [IRON_NODE_LINK]
+
+feature -- Query
 
 	is_named (a_name: READABLE_STRING_GENERAL): BOOLEAN
 			-- Is Current package named `a_name' ?
 		do
 			Result := attached name as n and then a_name.is_case_insensitive_equal (n)
 		end
-
-	has_archive: BOOLEAN
---		do
---			Result := archive_path /= Void
---		end
-
---	archive_path: detachable PATH
-
---	archive_file_size: INTEGER
-
---	archive_last_modified: detachable DATE_TIME
 
 feature -- Access: items	
 
@@ -162,6 +178,15 @@ feature -- Change
 			end
 		end
 
+	set_title (v: detachable READABLE_STRING_GENERAL)
+		do
+			if v /= Void then
+				title := v.to_string_32
+			else
+				title := Void
+			end
+		end
+
 	set_description (v: detachable READABLE_STRING_GENERAL)
 		do
 			if v /= Void then
@@ -170,12 +195,6 @@ feature -- Change
 				description := Void
 			end
 		end
-
---	set_archive_path (v: detachable PATH)
---		do
---			archive_path := v
---			get_archive_info
---		end
 
 	set_owner (u: like owner)
 		do
@@ -192,6 +211,71 @@ feature -- Change
 			create last_modified.make_now_utc
 		end
 
+
+	add_tag (t: READABLE_STRING_GENERAL)
+		local
+			l_tags: like tags
+			s: STRING_32
+		do
+			l_tags := tags
+			if l_tags = Void then
+				create {ARRAYED_LIST [READABLE_STRING_32]} l_tags.make (1)
+				tags := l_tags
+			end
+			create s.make_from_string_general (t)
+			s.left_adjust
+			s.right_adjust
+			l_tags.force (s)
+		end
+
+	remove_tag (t: READABLE_STRING_GENERAL)
+		local
+			l_tags: like tags
+		do
+			l_tags := tags
+			if l_tags /= Void then
+				from
+					l_tags.start
+				until
+					l_tags.after
+				loop
+					if l_tags.item.is_case_insensitive_equal_general (t) then
+						l_tags.remove
+					else
+						l_tags.forth
+					end
+				end
+				if l_tags.is_empty then
+					tags := Void
+				end
+			end
+		end
+
+	add_link (a_name: READABLE_STRING_GENERAL; a_link: IRON_NODE_LINK)
+		local
+			l_links: like links
+		do
+			l_links := links
+			if l_links = Void then
+				create l_links.make_caseless (1)
+				links := l_links
+			end
+			l_links.force (a_link, a_name)
+		end
+
+	remove_link (a_name: READABLE_STRING_GENERAL)
+		local
+			l_links: like links
+		do
+			l_links := links
+			if l_links /= Void then
+				l_links.remove (a_name)
+				if l_links.is_empty then
+					links := Void
+				end
+			end
+		end
+
 feature -- Visitor
 
 	accept (vis: IRON_NODE_VISITOR)
@@ -199,24 +283,8 @@ feature -- Visitor
 			vis.visit_package (Current)
 		end
 
---feature {NONE} -- Implementation
-
---	get_archive_info
---		local
---			f: RAW_FILE
---		do
---			if attached archive_path as p then
---				create f.make_with_path (p)
---				archive_file_size := f.count
---				create archive_last_modified.make_from_epoch (f.change_date)
---			else
---				archive_file_size := 0
---				archive_last_modified := Void
---			end
---		end
-
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

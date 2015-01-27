@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {FETCH_PACKAGE_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-02-04 22:23:08 +0100 (mar., 04 févr. 2014) $"
+	revision: "$Revision: 94170 $"
 
 class
 	FETCH_PACKAGE_HANDLER
@@ -57,9 +57,11 @@ feature -- Execution
 					attached l_package.archive_path as l_archive_path and then
 					u.file_path_exists (l_archive_path)
 				then
-					create md.make (l_archive_path.utf_8_name)
+					create md.make (l_archive_path.name)
 					md.set_no_cache
 					res.send (md)
+						-- Increment download
+					iron.database.increment_download_counter (l_package)
 				else
 					res.send (create {WSF_NOT_FOUND_RESPONSE}.make (req))
 				end
@@ -78,7 +80,7 @@ feature -- Execution
 								s.append ("<li class=%"package-inline%">")
 								s.append ("<a href=%""+ iron.package_version_view_web_page (l_package) +"%"> ")
 								s.append (m.html_encoded_string (e.item))
-								if attached l_package.name as l_name and then not l_name.same_string (e.item) then
+								if attached l_package.name as l_name and then not l_package.is_named (e.item) then
 									s.append (" -&gt; package %"")
 									s.append (m.html_encoded_string (l_name))
 									s.append_character ('%"')
@@ -127,7 +129,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

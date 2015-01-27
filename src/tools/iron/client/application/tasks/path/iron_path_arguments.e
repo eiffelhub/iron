@@ -1,43 +1,23 @@
 note
-	description: "Summary description for {ES_IRON_LAYOUT}."
-	date: "$Date: 2013-05-24 16:19:26 +0200 (ven., 24 mai 2013) $"
-	revision: "$Revision: 92590 $"
+	description: "Summary description for {IRON_PATH_ARGUMENTS}."
+	author: ""
+	date: "$Date: 2014-04-10 19:08:31 +0200 (jeu., 10 avr. 2014) $"
+	revision: "$Revision: 94812 $"
 
-class
-	ES_IRON_LAYOUT
+deferred class
+	IRON_PATH_ARGUMENTS
 
 inherit
-	IRON_LAYOUT
-		redefine
-			binaries_path
-		end
+	IRON_ARGUMENTS
 
-create
-	make
+feature -- Access
 
-feature {NONE} -- Initialization
-
-	make (e: like eiffel_layout)
-			-- Initialize with Eiffel layout `e'
-		do
-			eiffel_layout := e
-			make_with_path (e.iron_path)
-		end
-
-	eiffel_layout: EIFFEL_ENV
-			-- Associated Eiffel Layout
-
-feature -- Access		
-
-	binaries_path: detachable PATH
-			-- Binaries path if available.
-			--| $ISE_EIFFEL/tools/iron/spec/$ISE_PLATFORM/bin
-		once
-			Result := eiffel_layout.installation_iron_path.extended ("spec").extended (eiffel_layout.eiffel_platform).extended ("bin")
+	resources: LIST [IMMUTABLE_STRING_32]
+		deferred
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

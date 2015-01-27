@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
+	revision: "$Revision: 95181 $"
 
 deferred class
 	IRON_ARGUMENTS
@@ -10,6 +10,14 @@ deferred class
 feature -- Arguments
 
 	is_verbose_switch_used: BOOLEAN = True
+
+	version_switch: IMMUTABLE_STRING_32
+		deferred
+		end
+
+	logo_switch: IMMUTABLE_STRING_32
+		deferred
+		end
 
 	verbose_switch: STRING = "v|verbose"
 
@@ -22,6 +30,18 @@ feature -- Arguments
 	fill_argument_switches (a_switches: ARRAYED_LIST [ARGUMENT_SWITCH])
 		do
 			add_verbose_switch (a_switches)
+			add_version_switch (a_switches)
+			add_logo_switch (a_switches)
+		end
+
+	add_logo_switch (a_switches: ARRAYED_LIST [ARGUMENT_SWITCH])
+		do
+			a_switches.extend (create {ARGUMENT_SWITCH}.make (logo_switch, "Display logo information", True, False))
+		end
+
+	add_version_switch (a_switches: ARRAYED_LIST [ARGUMENT_SWITCH])
+		do
+			a_switches.extend (create {ARGUMENT_SWITCH}.make (version_switch, "Display version information", True, False))
 		end
 
 	add_verbose_switch (a_switches: ARRAYED_LIST [ARGUMENT_SWITCH])
@@ -66,7 +86,7 @@ feature -- Access
 	copyright: IMMUTABLE_STRING_32
 			-- <Precursor>
 		once
-			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2013. All Rights Reserved.")
+			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2014. All Rights Reserved.")
 		end
 
 	version: IMMUTABLE_STRING_32
@@ -76,7 +96,7 @@ feature -- Access
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

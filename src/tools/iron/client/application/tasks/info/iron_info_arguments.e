@@ -1,19 +1,19 @@
 note
 	description: "Summary description for {IRON_INFO_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-04-10 15:40:49 +0200 (jeu., 10 avr. 2014) $"
+	revision: "$Revision: 94806 $"
 
 deferred class
 	IRON_INFO_ARGUMENTS
 
 inherit
-	IRON_ARGUMENTS
+	IRON_SEARCH_ARGUMENTS
 
 feature -- Access
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

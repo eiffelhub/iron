@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {ACCOUNT_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-21 15:34:32 +0200 (mer., 21 mai 2014) $"
+	revision: "$Revision: 95149 $"
 
 class
 	ACCOUNT_HANDLER
@@ -113,19 +113,31 @@ feature -- Users
 					if
 						req.is_post_request_method and then
 						attached {WSF_STRING} req.form_parameter ("code") as s_code and then
-						attached {WSF_STRING} req.form_parameter ("new_password") as s_new_password
+						attached {WSF_STRING} req.form_parameter ("new_password") as s_new_password and then
+						attached {WSF_STRING} req.form_parameter ("new_password_check") as s_new_password_check
 					then
 						if
 							attached {READABLE_STRING_GENERAL} u.data_item ("reset_password.code") as l_code and then
 							l_code.is_case_insensitive_equal (s_code.value)
 						then
-							u.set_password (s_new_password.value)
-							u.remove_data_item ("reset_password.code")
-							u.remove_data_item ("reset_password.url")
-							u.remove_data_item ("reset_password.datetime")
-							iron.database.update_user (u)
-							s.append ("Password reset completed.")
-							s.append ("<a href=%""+ iron.user_page (u) +"%">Sign in with your new password.</a>")
+							if s_new_password.same_string (s_new_password_check.value) then
+								u.set_password (s_new_password.value)
+								u.remove_data_item ("reset_password.code")
+								u.remove_data_item ("reset_password.url")
+								u.remove_data_item ("reset_password.datetime")
+								iron.database.update_user (u)
+								s.append ("Password reset completed.")
+								s.append ("<a href=%""+ iron.user_page (u) +"%">Sign in with your new password.</a>")
+							else
+								s.append ("The Password and Re-typed Password do not match!")
+								f := new_reset_password_with_token_form (u, s_code.value)
+								f.process (req, Void, Void)
+								if attached f.last_data as f_data then
+									f_data.set_fields_invalid (True, "new_password_check")
+									f_data.apply_to_associated_form
+								end
+								f.append_to_html (create {WSF_REQUEST_THEME}.make_with_request (req), s)
+							end
 						else
 							s.append ("Reset password code is not associated with user ["+ html_encoder.general_encoded_string (s_uid.value) +"]!")
 						end
@@ -134,17 +146,7 @@ feature -- Users
 							attached {READABLE_STRING_GENERAL} u.data_item ("reset_password.code") as l_code and then
 							l_code.is_case_insensitive_equal (a_reset_pwd)
 						then
-							create f.make (iron.account_page (u) + "?reset_password=" + url_encoder.general_encoded_string (a_reset_pwd), "new-password")
-							create i.make_with_text ("code", a_reset_pwd.as_string_32)
-							i.set_label ("Code")
-							i.set_description ("The reset_password code.")
-							f.extend (i)
-							create i.make ("new_password")
-							i.set_label ("New Password")
-							i.set_description ("Enter your new password.")
-							f.extend (i)
-							create sub.make_with_text ("op", "Submit")
-							f.extend (sub)
+							f := new_reset_password_with_token_form (u, a_reset_pwd)
 							f.append_to_html (create {WSF_REQUEST_THEME}.make_with_request (req), s)
 						else
 							s.append ("Reset password url is not associated with user ["+ html_encoder.general_encoded_string (s_uid.value) +"]!")
@@ -155,7 +157,6 @@ feature -- Users
 						u.set_data_item ("reset_password.url", req.absolute_script_url (iron.account_page (u) + "?reset_password=" + l_uuid))
 						u.set_data_item ("reset_password.datetime", (create {HTTP_DATE}.make_now_utc).string)
 						iron.database.update_user (u)
-						iron.notify_user_updated (u, False)
 						s.append ("An email has just been sent to you. This describes how to reset your password. Check you inbox (eventually also your spam folder).")
 					end
 				else
@@ -181,12 +182,13 @@ feature -- Users
 		local
 			m: like new_response_message
 			s: STRING
+			u: detachable like current_user
 		do
 			m := new_response_message (req)
 			create s.make_empty
-
+			u := iron.database.user (a_uid)
 			if
-				attached iron.database.user (a_uid) as u and then
+				u /= Void and then
 				attached {READABLE_STRING_GENERAL} u.data_item ("activation.code") as u_code and then
 				a_code.is_case_insensitive_equal (a_code)
 			then
@@ -298,7 +300,6 @@ feature -- Users
 							u.set_data_item ("profile.note", l_note)
 						end
 						iron.database.update_user (u)
-						iron.notify_user_updated (u, True)
 					end
 				end
 			else
@@ -359,6 +360,42 @@ feature -- Users
 			Result := f
 		end
 
+feature -- Helper
+
+	new_reset_password_with_token_form (u: detachable IRON_NODE_USER; a_token: detachable READABLE_STRING_GENERAL;): WSF_FORM
+		local
+			i: WSF_FORM_TEXT_INPUT
+			pwd: WSF_FORM_PASSWORD_INPUT
+			sub: WSF_FORM_SUBMIT_INPUT
+		do
+			if a_token /= Void then
+				create Result.make (iron.account_page (u) + "?reset_password=" + url_encoder.general_encoded_string (a_token), "new-password")
+				create i.make_with_text ("code", a_token.as_string_32)
+			else
+				create Result.make (iron.account_page (u) + "?reset_password", "new-password")
+				create i.make_with_text ("code", "")
+			end
+			i.set_label ("Code")
+			i.set_size (50)
+			i.set_description ("The reset_password code.")
+			Result.extend (i)
+
+			create pwd.make ("new_password")
+			pwd.set_label ("New Password")
+			pwd.set_size (50)
+			pwd.set_description ("Enter your new password.")
+			Result.extend (pwd)
+
+			create pwd.make ("new_password_check")
+			pwd.set_label ("Re-type Password")
+			pwd.set_size (50)
+			pwd.set_description ("Re-type the same password.")
+			Result.extend (pwd)
+
+			create sub.make_with_text ("op", "Submit")
+			Result.extend (sub)
+		end
+
 feature -- Documentation
 
 	mapping_documentation (m: WSF_ROUTER_MAPPING; a_request_methods: detachable WSF_REQUEST_METHODS): WSF_ROUTER_MAPPING_DOCUMENTATION
@@ -369,7 +406,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

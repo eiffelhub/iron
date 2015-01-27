@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {FETCH_PACKAGE_API_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-12-17 11:11:26 +0100 (mar., 17 déc. 2013) $"
+	revision: "$Revision: 93742 $"
 
 class
 	FETCH_PACKAGE_API_HANDLER
@@ -56,7 +56,8 @@ feature -- Execution
 					create md.make (l_archive_path.utf_8_name)
 					md.set_no_cache
 					res.send (md)
-					-- Increment download
+						-- Increment download
+					iron.database.increment_download_counter (l_package)
 				else
 					res.send (create {WSF_NOT_FOUND_RESPONSE}.make (req))
 				end

@@ -1,45 +1,50 @@
 note
 	description: "Summary description for {IRON_ARGUMENT_BASE_PARSER}."
 	author: ""
-	date: "$Date: 2013-05-29 14:46:47 +0200 (mer., 29 mai 2013) $"
-	revision: "$Revision: 92626 $"
+	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
+	revision: "$Revision: 95181 $"
 
 deferred class
 	IRON_ARGUMENT_BASE_PARSER
 
 inherit
 	ARGUMENT_BASE_PARSER
-		redefine
+		rename
+			make as make_parser
+		undefine
 			sub_system_name,
 			is_using_unix_switch_style,
-			switch_prefixes
+			switch_prefixes,
+			help_switch,
+			version_switch
 		end
 
-feature {NONE} -- Status report		
+	IRON_ARGUMENT_PARSER_I
 
-	is_using_unix_switch_style: BOOLEAN = True
-			-- <Precursor>
-			--| Avoid using /flag ...
+feature {NONE} -- Initialization
 
-	switch_prefixes: ARRAY [CHARACTER_32]
-			-- Prefixes used to indicate a command line switch.
-		once
-			Result := <<'-'>>
-		end
-
-feature -- Access
-
-	sub_system_name: IMMUTABLE_STRING_32
+	make (a_task: like task)
+			-- Initialize argument parser
 		do
-			Result := task.name
+			task := a_task
+			make_parser (False, False, False)
+			initialize_with_task (a_task)
 		end
 
-	task: IRON_TASK
-		deferred
+feature -- Change
+
+	set_is_using_builtin_switches (b: like is_using_builtin_switches)
+		do
+			is_using_builtin_switches := b
+		end
+
+	set_is_case_sensitive (b: BOOLEAN)
+		do
+			is_case_sensitive := b
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_UPDATE_TASK}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-04-04 15:49:22 +0200 (ven., 04 avr. 2014) $"
+	revision: "$Revision: 94781 $"
 
 class
 	IRON_UPDATE_TASK
@@ -24,7 +24,7 @@ feature -- Execute
 		local
 			args: IRON_UPDATE_ARGUMENT_PARSER
 		do
-			create args.make (Current)
+			create args.make_with_option (Current, False)
 			args.execute (agent execute (args, a_iron))
 		end
 
@@ -33,13 +33,21 @@ feature -- Execute
 			print ("Updating iron data ...%N")
 			if args.is_simulation then
 
+			elseif args.repositories.count > 0 then
+				across
+					args.repositories as ic
+				loop
+					if attached a_iron.catalog_api.repository_at (ic.item) as repo then
+						a_iron.catalog_api.update_repository (repo, False)
+					end
+				end
 			else
 				a_iron.catalog_api.update
 			end
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision    : "$Revision: 93491 $"
+	date        : "$Date: 2015-01-23 00:34:29 +0100 (ven., 23 janv. 2015) $"
+	revision    : "$Revision: 96526 $"
 
 class
 	JSON_V1_IRON_NODE_ITERATOR
@@ -33,7 +33,7 @@ feature {NONE} -- Initialization
 
 	request: WSF_REQUEST
 
-	version: IRON_NODE_VERSION
+	version: detachable IRON_NODE_VERSION
 
 	content_type_version: IMMUTABLE_STRING_8
 		do
@@ -110,7 +110,7 @@ feature -- Access
 				visit_package_iterable (it)
 				j := last_json_value
 			else
-				create {JSON_ARRAY} j.make_array
+				create {JSON_ARRAY} j.make_empty
 			end
 			create jo.make
 			js := content_type_version
@@ -132,7 +132,7 @@ feature -- Access
 				visit_package_version_iterable (it)
 				j := last_json_value
 			else
-				create {JSON_ARRAY} j.make_array
+				create {JSON_ARRAY} j.make_empty
 			end
 			create jo.make
 			js := content_type_version
@@ -162,7 +162,6 @@ feature -- Visit
 	visit_package (p: IRON_NODE_PACKAGE)
 		local
 			js: JSON_STRING
---			l_size: INTEGER
 			j_object: JSON_OBJECT
 			j_array: JSON_ARRAY
 		do
@@ -172,45 +171,24 @@ feature -- Visit
 			if attached p.name as l_name then
 				js := l_name
 				j_object.put (js, "name")
---				if attached p.archive_path as l_archive_path then
---					js := request.absolute_script_url (iron.package_archive_web_page (version, p))
---					j_object.put (js, "archive")
---					debug
---						js := l_archive_path.name
---						j_object.put (js, "archive_path")
---					end
---					js := p.archive_file_size.out + " octects"
---					j_object.put (js, "archive_size")
---					if attached p.archive_last_modified as dt then
---						js := date_as_string (dt)
---						j_object.put (js, "archive_date")
---					end
---				end
-				if attached p.description as l_description then
-					js := l_description
-					j_object.put (js, "description")
-				end
-				if attached p.tags as l_tags and then not l_tags.is_empty then
-					create j_array.make_array
-					across
-						l_tags as ic_tags
-					loop
-						j_array.extend (create {JSON_STRING}.make_json_from_string_32 (ic_tags.item))
-					end
-					j_object.put (j_array, "tags")
-				end
-
 			end
---			if attached iron.database.path_associated_with_package (version, p) as l_paths then
---				create j_array.make_array
---				across
---					l_paths as c
---				loop
---					js := c.item
---					j_array.add (js)
---				end
---				j_object.put (j_array, "paths")
---			end
+			if attached p.title as l_title then
+				js := l_title
+				j_object.put (js, "title")
+			end
+			if attached p.description as l_description then
+				js := l_description
+				j_object.put (js, "description")
+			end
+			if attached p.tags as l_tags and then not l_tags.is_empty then
+				create j_array.make_empty
+				across
+					l_tags as ic_tags
+				loop
+					j_array.extend (create {JSON_STRING}.make_from_string_32 (ic_tags.item))
+				end
+				j_object.put (j_array, "tags")
+			end
 			last_json_value := j_object
 		end
 
@@ -221,44 +199,57 @@ feature -- Visit
 			j_object: JSON_OBJECT
 			j_array: JSON_ARRAY
 		do
-			check same_version: version ~ p.version end
+			check same_version: attached version as v implies v ~ p.version end
 			create j_object.make
 			js := p.id
 			j_object.put (js, "id")
 			if attached p.name as l_name then
 				js := l_name
 				j_object.put (js, "name")
-				if attached p.archive_path as l_archive_path then
-					js := request.absolute_script_url (iron.package_version_archive_resource (p))
-					j_object.put (js, "archive")
-					debug
-						js := l_archive_path.name
-						j_object.put (js, "archive_path")
-					end
-					js := p.archive_file_size.out + " octects"
-					j_object.put (js, "archive_size")
-					if attached p.archive_last_modified as dt then
-						js := date_as_string (dt)
-						j_object.put (js, "archive_date")
-					end
+			end
+			if attached p.archive_path as l_archive_path then
+				js := request.absolute_script_url (iron.package_version_archive_resource (p))
+				j_object.put (js, "archive")
+				debug
+					js := l_archive_path.name
+					j_object.put (js, "archive_path")
 				end
-				if attached p.description as l_description then
-					js := l_description
-					j_object.put (js, "description")
-				end
-				if attached p.tags as l_tags and then not l_tags.is_empty then
-					create j_array.make_array
-					across
-						l_tags as ic_tags
-					loop
-						j_array.extend (create {JSON_STRING}.make_json_from_string_32 (ic_tags.item))
-					end
-					j_object.put (j_array, "tags")
+				js := p.archive_file_size.out
+				j_object.put (js, "archive_size")
+
+				j_object.put_natural (p.archive_revision, "archive_revision")
+
+				if attached p.archive_hash as l_hash then
+					js := l_hash.out
+					j_object.put (js, "archive_hash")
 				end
 
+				if attached p.archive_last_modified as dt then
+					js := date_as_string (dt)
+					j_object.put (js, "archive_date")
+				end
+
+				j_object.put (create {JSON_NUMBER}.make_integer (p.download_count), "download_count")
+			end
+			if attached p.title as l_title then
+				js := l_title
+				j_object.put (js, "title")
+			end
+			if attached p.description as l_description then
+				js := l_description
+				j_object.put (js, "description")
+			end
+			if attached p.tags as l_tags and then not l_tags.is_empty then
+				create j_array.make_empty
+				across
+					l_tags as ic_tags
+				loop
+					j_array.extend (create {JSON_STRING}.make_from_string_32 (ic_tags.item))
+				end
+				j_object.put (j_array, "tags")
 			end
 			if attached iron.database.path_associated_with_package (p) as l_paths then
-				create j_array.make_array
+				create j_array.make_empty
 				across
 					l_paths as c
 				loop
@@ -274,7 +265,7 @@ feature -- Visit
 		local
 			j_array: JSON_ARRAY
 		do
-			create j_array.make_array
+			create j_array.make_empty
 			across
 				it as c
 			loop
@@ -291,7 +282,7 @@ feature -- Visit
 		local
 			j_array: JSON_ARRAY
 		do
-			create j_array.make_array
+			create j_array.make_empty
 			across
 				it as c
 			loop
@@ -322,7 +313,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -4,40 +4,40 @@ note
 				
 				note: if the remote API changes, update this class.
 			]"
-	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
-	revision: "$Revision: 92997 $"
+	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
+	revision: "$Revision: 94640 $"
 
 class
 	IRON_URL_BUILDER
 
 feature -- URL path
 
-	path_package_list (a_repo: IRON_REPOSITORY): READABLE_STRING_8
+	path_package_list (a_repo: IRON_WEB_REPOSITORY): READABLE_STRING_8
 		do
 			Result := "/access/" + a_repo.version + "/package/"
 		end
 
-	path_create_package (a_repo: IRON_REPOSITORY): READABLE_STRING_8
+	path_create_package (a_repo: IRON_WEB_REPOSITORY): READABLE_STRING_8
 		do
 			Result := "/access/" + a_repo.version + "/package/"
 		end
 
-	path_update_package (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
+	path_update_package (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
 		do
 			Result := "/access/" + a_repo.version + "/package/" + a_package.id
 		end
 
-	path_package_delete (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
+	path_package_delete (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
 		do
 			Result := path_update_package (a_repo, a_package)
 		end
 
-	path_upload_package_archive (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
+	path_upload_package_archive (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
 		do
 			Result := path_update_package (a_repo, a_package) + "/archive"
 		end
 
-	path_add_package_index (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
+	path_add_package_index (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE): READABLE_STRING_8
 		do
 			Result := path_update_package (a_repo, a_package) + "/map"
 		end

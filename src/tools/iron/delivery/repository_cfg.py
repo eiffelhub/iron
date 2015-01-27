@@ -1,8 +1,8 @@
 #!/usr/local/bin/python
 
 def version():
-	return "13.11"
+	return "15.01"
 
 def repository():
-	return "http://iron.eiffel.com"
+	return "https://iron.eiffel.com"
 

@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision    : "$Revision: 93491 $"
+	date        : "$Date: 2014-02-04 22:23:08 +0100 (mar., 04 févr. 2014) $"
+	revision    : "$Revision: 94170 $"
 
 class
 	IRON_NODE_CONTROLLER_USER_TASK
@@ -73,12 +73,12 @@ feature -- Execution
 			u.set_password (p)
 			u.set_email (e)
 			iron.database.update_user (u)
-			iron.notify_user_updated (u, True)
+			iron.on_user_updated (u, True)
 		end
 
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

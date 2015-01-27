@@ -1,79 +1,66 @@
 note
-	description: "Summary description for {ES_IRON_CLIENT}."
-	author: ""
-	date: "$Date: 2013-05-24 20:00:56 +0200 (ven., 24 mai 2013) $"
-	revision: "$Revision: 92594 $"
+	description: "Summary description for {IRON_NODE_HTML_MENU_ITEM}."
+	date: "$Date: 2013-12-17 17:33:35 +0100 (mar., 17 déc. 2013) $"
+	revision: "$Revision: 93746 $"
 
 class
-	ES_IRON_CLIENT
-
-inherit
-	IRON_CLIENT
-		redefine
-			iron_layout,
-			initialize_iron
-		end
-
-	EIFFEL_LAYOUT
-		rename
-			print as print_any
-		export
-			{NONE} all
-		end
-
-	IRON_NAMES
-		rename
-			print as print_any
-		export
-			{NONE} all
-		end
-
-	IRON_EXPORTER
-		rename
-			print as print_any
-		export
-			{NONE} all
-		end
+	IRON_NODE_HTML_LINK
 
 create
 	make
 
 feature {NONE} -- Initialization
 
-	initialize_iron (a_iron: IRON)
-			-- Initialize `a_iron' if needed
-		local
-			repo: IRON_REPOSITORY
+	make (a_url: like url; a_title: detachable like title)
 		do
-			if
-				a_iron.catalog_api.repositories.is_empty and then
-				is_eiffel_layout_defined
-			then
-					-- Initialize default repo
-				print ("First initialization with default repository...%N")
-				create repo.make (create {URI}.make_from_string ("http://iron.eiffel.com/"), {EIFFEL_CONSTANTS}.major_version.out + "." + {EIFFEL_CONSTANTS}.minor_version.out)
-				print (m_registering_repository ("iron", repo.url))
-				io.put_new_line
-				a_iron.catalog_api.register_repository ("iron", repo)
-
-				print (m_updating_repositories)
-				io.put_new_line
-				a_iron.catalog_api.update
-				io.put_new_line
+			url := a_url
+			if a_title /= Void then
+				title := a_title
+			else
+				create {STRING_8} title.make_from_string (a_url)
 			end
 		end
 
 feature -- Access
 
-	iron_layout: ES_IRON_LAYOUT
+	url: READABLE_STRING_8
+
+	title: READABLE_STRING_8
+			-- html encoded title.
+
+	sub_links: detachable ARRAYED_LIST [IRON_NODE_HTML_LINK]
+			-- Optional sub links
+
+	is_active: BOOLEAN
+
+feature -- Change
+
+	set_is_active (b: BOOLEAN)
 		do
-			if not is_eiffel_layout_defined then
-				set_eiffel_layout (create {EC_EIFFEL_LAYOUT})
-			end
-			create Result.make (eiffel_layout)
+			is_active := b
 		end
 
-note
+	add_sublink_item (lnk: IRON_NODE_HTML_LINK)
+		local
+			lst: like sub_links
+		do
+			lst := sub_links
+			if lst = Void then
+				create lst.make (1)
+				sub_links := lst
+			end
+			lst.force (lnk)
+		end
+
+	add_sublink (a_url: READABLE_STRING_8; a_title: detachable READABLE_STRING_8)
+		local
+			lnk: IRON_NODE_HTML_LINK
+		do
+			create lnk.make (a_url, a_title)
+			add_sublink_item (lnk)
+		end
+
+;note
 	copyright: "Copyright (c) 1984-2013, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"

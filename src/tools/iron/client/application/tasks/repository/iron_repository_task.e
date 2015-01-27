@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_REPOSITORY_TASK}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-04-09 13:25:04 +0200 (mer., 09 avr. 2014) $"
+	revision: "$Revision: 94796 $"
 
 class
 	IRON_REPOSITORY_TASK
@@ -35,34 +35,52 @@ feature -- Execute
 
 	execute (args: IRON_REPOSITORY_ARGUMENTS; a_iron: IRON)
 		local
-			repo: IRON_REPOSITORY
+			fac: IRON_REPOSITORY_FACTORY
 		do
-			if args.is_listing then
+			if args.is_info then
+				print ("Iron packages installation:%N  - ")
+				print (a_iron.layout.path.name)
+				print ("%N")
+
+				print ("Iron client installation:%N  - ")
+				print (a_iron.layout.installation_path.name)
+				print ("%N")
+			elseif args.is_listing then
 				across
 					a_iron.catalog_api.repositories as c
 				loop
-					print (c.item.url)
+					print (c.item.location_string)
 					print ("%N")
 				end
+			elseif args.is_cleaning then
+				across
+					a_iron.installation_api.unexpected_installed_packages as ic
+				loop
+					a_iron.catalog_api.uninstall_package (ic.item)
+				end
+				check cleaned: a_iron.installation_api.unexpected_installed_packages.is_empty end
 			end
-			if attached args.repository_to_add as v and then attached args.repository_url as l_repo_url then
-				print (m_registering_repository (v, l_repo_url))
+			if attached args.repository_to_add as l_repo_location then
+				print (m_registering_repository (l_repo_location))
 				print_new_line
-				create repo.make_from_version_uri ((create {IRI}.make_from_string (l_repo_url)).to_uri)
-				a_iron.catalog_api.register_repository (v, repo)
+				create fac
+				if attached a_iron.catalog_api.repository_at (l_repo_location) then
+					print (m_already_registered_repository_location (l_repo_location))
+				elseif attached fac.new_repository (l_repo_location) as repo then
+					a_iron.catalog_api.register_repository (repo)
+				else
+					print (m_invalid_repository_location (l_repo_location))
+				end
 			end
-			if attached args.repository_to_remove as v then
-				print (m_unregistering_repository (v))
+			if attached args.repository_to_remove as l_repo_url then
+				print (m_unregistering_repository (l_repo_url))
 				print_new_line
-				a_iron.catalog_api.unregister_repository (v)
+				a_iron.catalog_api.unregister_repository (l_repo_url)
 			end
-			print (m_updating_repositories)
-			print_new_line
-			a_iron.catalog_api.update
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

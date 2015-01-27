@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_TESTING_TASK}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-04-18 17:27:42 +0200 (ven., 18 avr. 2014) $"
+	revision: "$Revision: 94890 $"
 
 class
 	IRON_TESTING_TASK
@@ -37,7 +37,7 @@ feature -- Execute
 			across
 				a_iron.catalog_api.repositories as c
 			loop
-				print ("  Repository [" + c.item.uri.string + c.item.version + ")%N")
+				print ("  Repository [" + c.item.location_string + ")%N")
 				display_packages (Void, c.item)
 				across
 					c.item as p
@@ -68,20 +68,25 @@ feature -- Execute
 				across
 					lst as p
 				loop
-					print ("* Download ["+ p.item.human_identifier +"] ==%N")
-					a_iron.catalog_api.download_package (p.item, True)
+					if attached {IRON_WEB_REPOSITORY} p.item.repository as l_remote_repo then
+						print ("* Download ["+ p.item.human_identifier +"] ==%N")
+						a_iron.catalog_api.download_package (l_remote_repo, p.item, True)
+					end
 				end
 			end
 			if not lst.is_empty then
 				across
 					lst as p
 				loop
-					print ("* Install ["+ p.item.human_identifier +"] ==%N")
-					a_iron.catalog_api.install_package (p.item, True)
+					if attached {IRON_WEB_REPOSITORY} p.item.repository as l_remote_repo then
+						print ("* Install ["+ p.item.human_identifier +"] ==%N")
+						a_iron.catalog_api.install_package (l_remote_repo, p.item, True)
+						a_iron.catalog_api.setup_package_installation (p.item, Void, True)
+					end
 				end
 			end
 
-			create l_uri.make_from_string ("http://localhost:9090/13.11/eiffel.com/library/preferences/xml_pref-safe.ecf")
+			create l_uri.make_from_string ("http://localhost:9090/14.05/eiffel.com/library/preferences/xml_pref-safe.ecf")
 			print ("* Path associated with "+ l_uri.string +" ?%N")
 
 			if attached a_iron.installation_api.local_path_associated_with_uri (l_uri.string) as l_path then
@@ -112,13 +117,13 @@ feature -- Execute
 				across
 					c.item.associated_paths as cur
 				loop
-					print ("%T"+ c.item.repository.url + cur.item +"%N")
+					print ("%T"+ c.item.repository.location_string + cur.item +"%N")
 				end
 			end
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

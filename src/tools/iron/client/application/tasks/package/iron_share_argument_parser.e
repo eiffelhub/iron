@@ -5,39 +5,33 @@ note
 				iron package {create|update|delete} --user username --pwd password --repository http://iron.eiffel.com/13.11 --data data_file
 		]"
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
+	revision: "$Revision: 95181 $"
 
 class
 	IRON_SHARE_ARGUMENT_PARSER
 
 inherit
 	IRON_ARGUMENT_SINGLE_PARSER
-		rename
-			make as make_parser
-		end
 
 	IRON_SHARE_ARGUMENTS
 
 create
 	make
 
-feature {NONE} -- Initialization
-
-	make (a_task: IRON_TASK)
-			-- Initialize argument parser
-		do
-			task := a_task
-			make_parser (False, False)
-			set_argument_source (a_task.argument_source)
-			is_using_builtin_switches := not is_verbose_switch_used
---			set_is_using_separated_switch_values (False)
---			set_non_switched_argument_validator (create {ARGUMENT_DIRECTORY_VALIDATOR})
-		end
-
-	task: IRON_TASK
-
 feature -- Access
+
+
+	configuration_file: detachable PATH
+			-- <Precursor>
+		do
+			if
+				has_option (configuration_file_switch) and then
+				attached option_of_name (configuration_file_switch) as opt
+			then
+				create Result.make_from_string (opt.value)
+			end
+		end
 
 	username: detachable IMMUTABLE_STRING_32
 		do
@@ -59,11 +53,32 @@ feature -- Access
 			end
 		end
 
+	package_file: detachable PATH
+			-- <Precursor>
+		do
+			if
+				has_option (package_file_switch) and then
+				attached option_of_name (package_file_switch) as opt
+			then
+				create Result.make_from_string (opt.value)
+			end
+		end
+
 	package_name: detachable IMMUTABLE_STRING_32
 		do
 			if
 				has_option (package_name_switch) and then
 				attached option_of_name (package_name_switch) as opt
+			then
+				create Result.make_from_string (opt.value)
+			end
+		end
+
+	package_title: detachable IMMUTABLE_STRING_32
+		do
+			if
+				has_option (package_title_switch) and then
+				attached option_of_name (package_title_switch) as opt
 			then
 				create Result.make_from_string (opt.value)
 			end
@@ -106,6 +121,11 @@ feature -- Access
 			then
 				Result := lst
 			end
+		end
+
+	is_forcing: BOOLEAN
+		do
+			Result := has_option (force_switch)
 		end
 
 	is_create: BOOLEAN
@@ -165,13 +185,6 @@ feature -- Access
 
 feature {NONE} -- Usage
 
-	name: IMMUTABLE_STRING_32
-		once
-			create Result.make_from_string_general ({IRON_CONSTANTS}.executable_name + " " + task.name)
-		end
-
-feature {NONE} -- Usage
-
 	non_switched_argument_name: IMMUTABLE_STRING_32
 		once
 			create Result.make_from_string ({STRING_32} "operation")
@@ -198,30 +211,39 @@ feature {NONE} -- Switches
 			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (username_switch, "Username", False, False, "username", "required username", False))
 			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (password_switch, "Password", False, False, "password", "required password", False))
 			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (repo_switch, "Repository", True, False, "url", "Repository url including the version", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (configuration_file_switch, "Configuration file location", True, False, "location", "location of configuration file that may set 'username,password,repository' (.ini syntax)", False))
+
 			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (data_switch, "Data file", True, False, "file", "File describing the data (check documentation for the format)", False))
-			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_name_switch, "Package name", True, False, "name", "package name, override value from 'data file'", False))
-			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_description_switch, "Package description", True, False, "description", "package description, override value from 'data file'", False))
-			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_archive_file_switch, "Package archive file", True, False, "path-to-archive", "archive file, override value from 'data file'", False))
-			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_archive_source_switch, "Package archive source", True, False, "folder", "Source folder used to build the archive, override value from 'data file'", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_file_switch, "Iron package location", True, False, "path to package.iron", "package location, override existing value", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_name_switch, "Package name", True, False, "name", "package name, override existing value", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_title_switch, "Package title", True, False, "name", "package title, override existing value", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_description_switch, "Package description", True, False, "description", "package description, override existing value", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_archive_file_switch, "Package archive file", True, False, "path-to-archive", "archive file, override existing value", False))
+			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_archive_source_switch, "Package archive source", True, False, "folder", "Source folder used to build the archive, override existing value", False))
 			Result.extend (create {ARGUMENT_VALUE_SWITCH}.make (package_index_switch, "Associated package path (c.f full iron URI)", True, True, "path", "relative path from repository url", False))
-			add_verbose_switch (Result)
+			Result.extend (create {ARGUMENT_SWITCH}.make (force_switch, "Force operations (such as upload again the archive, ...)", True, True))
+			fill_argument_switches (Result)
 			add_simulation_switch (Result)
 			add_batch_interactive_switch (Result)
 		end
 
+	configuration_file_switch: STRING = "config"
 	username_switch: STRING = "u|username"
 	password_switch: STRING = "p|password"
 	repo_switch: STRING = "r|repository"
 	data_switch: STRING = "d|data"
+	force_switch: STRING = "f|force"
 
+	package_file_switch: STRING = "package"
 	package_name_switch: STRING = "package-name"
+	package_title_switch: STRING = "package-title"
 	package_description_switch: STRING = "package-description"
 	package_archive_file_switch: STRING = "package-archive-file"
 	package_archive_source_switch: STRING = "package-archive-source"
 	package_index_switch: STRING = "index"
 
 ;note
-	copyright:	"Copyright (c) 1984-2013, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

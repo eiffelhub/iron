@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_FS_PACKAGE_INFO_DIRECTORY_ITERATOR}."
 	author: ""
-	date: "$Date: 2013-07-03 18:31:59 +0200 (mer., 03 juil. 2013) $"
-	revision: "$Revision: 92773 $"
+	date: "$Date: 2014-09-29 21:50:36 +0200 (lun., 29 sept. 2014) $"
+	revision: "$Revision: 95824 $"
 
 class
 	IRON_FS_PACKAGE_INFO_DIRECTORY_ITERATOR
@@ -17,7 +17,8 @@ inherit
 		end
 
 create
-	make
+	make,
+	make_empty
 
 feature {NONE} -- Initialization
 
@@ -27,16 +28,29 @@ feature {NONE} -- Initialization
 			depth := 0
 		end
 
-	list: LIST [PATH]
+	make_empty
+		do
+			make (create {ARRAYED_LIST [PATH]}.make (0))
+		end
 
 	depth: INTEGER
+
+feature -- Access: result
+
+	list: LIST [PATH]
+			-- List containing matching info path.	
 
 feature -- Access
 
 	scan_folder (dn: PATH)
+			-- Scan directory `dn' for iron package files.
+		local
+			ut: FILE_UTILITIES
 		do
 			depth := 0
-			process_directory (dn)
+			if ut.directory_path_exists (dn) then
+				process_directory (dn)
+			end
 		end
 
 	process_directory (dn: PATH)
@@ -66,7 +80,7 @@ feature -- Status
 
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

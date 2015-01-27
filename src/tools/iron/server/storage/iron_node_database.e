@@ -1,14 +1,16 @@
 note
 	description: "Summary description for {IRON_NODE_DATABASE}."
 	author: ""
-	date: "$Date: 2013-11-27 14:17:51 +0100 (mer., 27 nov. 2013) $"
-	revision: "$Revision: 93555 $"
+	date: "$Date: 2015-01-22 22:06:59 +0100 (jeu., 22 janv. 2015) $"
+	revision: "$Revision: 96522 $"
 
 deferred class
 	IRON_NODE_DATABASE
 
 inherit
 	IRON_NODE_EXPORTER
+
+	IRON_NODE_FORWARD_OBSERVER
 
 feature -- Initialization
 
@@ -21,6 +23,13 @@ feature -- Initialization
 feature -- Status report
 
 	is_available: BOOLEAN
+		deferred
+		end
+
+feature -- Logs
+
+	save_log (a_log: IRON_NODE_LOG)
+			-- Save log `a_log'.
 		deferred
 		end
 
@@ -112,6 +121,11 @@ feature -- Version Package: Access
 			Result /= Void implies Result.package ~ package (a_id)
 		end
 
+	version_packages_count (v: IRON_NODE_VERSION): INTEGER
+			-- Total number of package for version `v'.
+		deferred
+		end
+
 	version_packages (v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): detachable LIST [IRON_NODE_VERSION_PACKAGE]
 			-- Range [a_lower:a_upper] of packages for version `v'
 			-- if a_upper <= 0 then a_upper start from the end.
@@ -130,6 +144,132 @@ feature -- Version Package: Access
 
 	path_browse_index (v: IRON_NODE_VERSION; a_path: READABLE_STRING_GENERAL): detachable ITERABLE [READABLE_STRING_32]
 		deferred
+		end
+
+	download_count (a_package: IRON_NODE_VERSION_PACKAGE): INTEGER
+		deferred
+		end
+
+	increment_download_counter (a_package: IRON_NODE_VERSION_PACKAGE)
+		deferred
+		ensure
+			count_incremented: a_package.download_count > old a_package.download_count
+		end
+
+	query_version_packages (q: READABLE_STRING_32; v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): LIST [IRON_NODE_VERSION_PACKAGE]
+			-- Range [a_lower:a_upper] of packages for version `v' meeting the criteria expressed by `q'
+			-- if a_upper <= 0 then a_upper start from the end.
+		local
+			i: INTEGER
+		do
+			create {ARRAYED_LIST [IRON_NODE_VERSION_PACKAGE]} Result.make (0)
+			if attached version_packages (v, 1, 0) as lst then
+				if attached version_package_criteria_factory.criteria_from_string (q) as crit then
+					Result := crit.list (lst)
+					if a_upper >= a_lower then
+						from
+							Result.start
+							i := 1
+						until
+							i = a_lower or Result.after
+						loop
+							Result.remove
+						end
+						from
+							Result.finish
+							i := a_upper - a_lower
+						until
+							Result.count = i
+						loop
+							Result.remove
+						end
+					end
+				end
+			end
+		end
+
+feature -- Version Package: Criteria
+
+	version_package_criteria_factory: CRITERIA_FACTORY [IRON_NODE_VERSION_PACKAGE]
+		once
+			create Result.make
+			Result.register_builder ("name", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
+							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
+								local
+									kmp: KMP_WILD
+								do
+									if attached obj.name as l_name then
+										if s.has ('*') or s.has ('?') then
+											create kmp.make (s, l_name)
+											kmp.disable_case_sensitive
+											Result := kmp.pattern_matches
+										else
+											Result := l_name.as_lower.has_substring (s.as_lower)
+										end
+									end
+								end(?, v)
+							)
+					end)
+			Result.register_builder ("title", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
+							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
+								local
+									kmp: KMP_WILD
+								do
+									if attached obj.title as l_title then
+										if s.has ('*') or s.has ('?') then
+											create kmp.make (s, l_title)
+											kmp.disable_case_sensitive
+											Result := kmp.pattern_matches
+										else
+											Result := l_title.as_lower.has_substring (s.as_lower)
+										end
+									end
+								end(?, v)
+							)
+					end)
+			Result.register_builder ("tag", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
+							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
+								do
+									Result := attached obj.tags as l_tags and then
+										across l_tags as ic some ic.item.is_case_insensitive_equal_general (s) end
+								end(?, v)
+							)
+					end)
+			Result.register_builder ("owner", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
+							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
+								do
+									Result := attached obj.owner as l_owner and then
+										l_owner.name.is_case_insensitive_equal_general (s)
+								end(?, v)
+							)
+					end)
+			Result.register_builder ("downloads", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					local
+						i: INTEGER
+					do
+						if v.is_integer then
+							i := v.to_integer
+							create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
+								agent (obj: IRON_NODE_VERSION_PACKAGE; nb: INTEGER): BOOLEAN
+									do
+										Result := obj.download_count >= nb
+									end(?, i)
+								)
+						end
+					end)
+			Result.register_default_builder ("name")
+			Result.set_builder_description ("name", "has package name (support wildcard)")
+			Result.set_builder_description ("tag", "has tag")
+			Result.set_builder_description ("owner", "is published by username")
+			Result.set_builder_description ("downloads", "has at least N downloads")
 		end
 
 feature -- Version Package: change		
@@ -158,7 +298,26 @@ feature -- Version Package: change
 			version_package (a_package.version, old a_package.id) = Void
 		end
 
-feature -- Version Package/ archive: change				
+feature -- Version Package/ archive: change	
+
+	last_archive_revision (a_package: IRON_NODE_PACKAGE): NATURAL
+		deferred
+		end
+
+	incremented_last_archive_revision (a_package: IRON_NODE_PACKAGE; a_min_rev: NATURAL): NATURAL
+			-- Incremented value of last archive revision counter for package `a_package'
+			-- with a minimum value of `a_min_rev'.
+		deferred
+		ensure
+			Result > old last_archive_revision (a_package) and Result > a_min_rev
+		end
+
+	get_new_archive_revision (a_package: IRON_NODE_VERSION_PACKAGE)
+			-- Get a new archive revision number for `a_package'.
+		deferred
+		ensure
+			revision_incremented: a_package.archive_revision > old a_package.archive_revision
+		end
 
 	save_uploaded_package_archive (a_package: IRON_NODE_VERSION_PACKAGE; a_file: WSF_UPLOADED_FILE)
 		require
@@ -208,7 +367,7 @@ feature -- Version Package/ map,path: change
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

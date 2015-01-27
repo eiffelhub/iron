@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {PACKAGE_MAP_HANDLER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2013-12-17 17:33:35 +0100 (mar., 17 déc. 2013) $"
+	revision: "$Revision: 93746 $"
 
 class
 	PACKAGE_MAP_HANDLER
@@ -46,6 +46,7 @@ feature -- Execution
 		do
 			if attached package_version_from_id_path_parameter (req, "id") as l_package	then
 				r := new_response_message (req)
+				r.set_iron_version_package (l_package)
 				r.add_menu ("View", iron.package_version_view_web_page (l_package))
 				create s.make_empty
 				s.append ("<strong>[")
@@ -98,7 +99,7 @@ feature -- Execution
 			if attached package_version_from_id_path_parameter (req, "id") as l_package	then
 				if has_permission_to_modify_package_version (req, l_package) then
 					m := new_response_message (req)
-
+					m.set_iron_version_package (l_package)
 					create s.make_empty
 
 					m.add_menu ("View", iron.package_version_view_web_page (l_package))
@@ -173,8 +174,10 @@ feature -- Execution
 			s: STRING
 		do
 			if attached package_version_from_id_path_parameter (req, "id") as l_package then
+
 				if has_permission_to_modify_package_version (req, l_package) then
 					m := new_response_message (req)
+					m.set_iron_version_package (l_package)
 					create s.make_empty
 					m.add_menu ("View", iron.package_version_view_web_page (l_package))
 					if

@@ -3,8 +3,8 @@ note
 			Objects that ...
 		]"
 	author: "$Author: jfiat $"
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-02-05 17:37:55 +0100 (mer., 05 févr. 2014) $"
+	revision: "$Revision: 94193 $"
 
 class
 	IRON_NODE_FACTORY
@@ -12,35 +12,51 @@ class
 inherit
 	SHARED_EXECUTION_ENVIRONMENT
 
+	REFACTORING_HELPER
+
 feature -- Access
 
 	iron_node: IRON_NODE
 		local
 			db: IRON_NODE_DATABASE
+			obs: IRON_NODE_OBSERVER
 			mailer: NOTIFICATION_MAILER
 			ext_mailer: NOTIFICATION_EXTERNAL_MAILER
 			lay: IRON_NODE_LAYOUT
 		do
 			if attached execution_environment.item ({IRON_NODE_CONSTANTS}.IRON_REPO_variable_name) as s then
-
 				create lay.make_with_path (create {PATH}.make_from_string (s))
 			else
 				create lay.make_default
 			end
-			create {IRON_NODE_FS_DATABASE} db.make_with_layout (lay)
+
 			if {PLATFORM}.is_windows then
 				create ext_mailer.make (lay.binaries_path.extended ("sendmail.bat").name, Void)
 				mailer := ext_mailer
 			else
 				create {NOTIFICATION_SENDMAIL_MAILER} mailer
 			end
+			create {IRON_NODE_FS_DATABASE} db.make_with_layout (lay)
 			create Result.make (db, lay)
-				-- FIXME: do not hardcode email address.
-			Result.register_observer (create {IRON_NODE_MAILER_OBSERVER}.make_with_mailer (mailer, "jfiat@eiffel.com"))
+
+				-- Mail notification
+			if attached Result.config.administrator_email as l_email then
+				create {IRON_NODE_MAILER_OBSERVER} obs.make_with_mailer (mailer, l_email)
+				Result.register_observer (obs)
+			else
+					-- No mail notification
+			end
+
+				-- Logs
+			create {IRON_NODE_LOGGING_OBSERVER} obs.make (agent db.save_log, Result.config.log_level) -- Log level unused for now.
+			Result.register_observer (obs)
+
+				-- Callbacks
+			db.register_observer (Result)
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

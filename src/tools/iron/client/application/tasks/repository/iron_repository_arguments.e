@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_REPOSITORY_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
+	revision: "$Revision: 94640 $"
 
 deferred class
 	IRON_REPOSITORY_ARGUMENTS
@@ -12,7 +12,17 @@ inherit
 
 feature -- Access
 
+	is_info: BOOLEAN
+		deferred
+		end
+
 	is_listing: BOOLEAN
+		deferred
+		end
+
+	is_cleaning: BOOLEAN
+			-- Is cleaning current installation?
+			-- i.e: removing package without any registered repository
 		deferred
 		end
 
@@ -20,7 +30,7 @@ feature -- Access
 		deferred
 		end
 
-	repository_to_add: detachable IMMUTABLE_STRING_8
+	repository_to_add: detachable IMMUTABLE_STRING_32
 		deferred
 		end
 
@@ -31,7 +41,7 @@ feature -- Access
 
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

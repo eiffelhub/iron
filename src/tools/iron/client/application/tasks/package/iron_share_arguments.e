@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_SHARE_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2013-05-30 13:53:45 +0200 (jeu., 30 mai 2013) $"
-	revision: "$Revision: 92635 $"
+	date: "$Date: 2014-04-18 20:31:27 +0200 (ven., 18 avr. 2014) $"
+	revision: "$Revision: 94894 $"
 
 deferred class
 	IRON_SHARE_ARGUMENTS
@@ -12,6 +12,11 @@ inherit
 
 feature -- Access
 
+	configuration_file: detachable PATH
+			-- Configuration ini file, that may contain `username', `password', `repository' settings.
+		deferred
+		end
+
 	username: detachable IMMUTABLE_STRING_32
 		deferred
 		end
@@ -20,7 +25,16 @@ feature -- Access
 		deferred
 		end
 
+	package_file: detachable PATH
+			-- package.iron file location if any.
+		deferred
+		end
+
 	package_name: detachable IMMUTABLE_STRING_32
+		deferred
+		end
+
+	package_title: detachable IMMUTABLE_STRING_32
 		deferred
 		end
 
@@ -37,6 +51,10 @@ feature -- Access
 		end
 
 	package_indexes: detachable LIST [IMMUTABLE_STRING_32]
+		deferred
+		end
+
+	is_forcing: BOOLEAN
 		deferred
 		end
 
@@ -69,7 +87,7 @@ feature -- Access
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CATALOG}."
 	author: ""
-	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93492 $"
+	date: "$Date: 2014-04-18 17:27:42 +0200 (ven., 18 avr. 2014) $"
+	revision: "$Revision: 94890 $"
 
 deferred class
 	IRON_CATALOG
@@ -21,36 +21,63 @@ feature -- Access
 feature -- Access: repository		
 
 	repositories: LIST [IRON_REPOSITORY]
+			-- Ordered list of repositories.
+			--| ordered by priority (first has priority over next)
+			--| the order is used to resolved eventual conflict.
 		deferred
 		end
 
-	register_repository (a_name: READABLE_STRING_8; a_repo: IRON_REPOSITORY)
+	register_repository (a_repo: IRON_REPOSITORY)
+			-- Register repository associated with `a_uri'
 		deferred
 		end
 
-	unregister_repository (a_name_or_uri: READABLE_STRING_GENERAL)
+	unregister_repository (a_uri: READABLE_STRING_GENERAL)
+			-- Unregister repository associated with `a_uri'
+			-- and also uninstall all related packages.
 		deferred
 		end
 
-	repository (a_version_uri: URI): detachable IRON_REPOSITORY
+	repository (a_uri: URI): detachable IRON_REPOSITORY
+			-- Repository associated with uri `a_uri'
 		deferred
+		end
+
+	repository_at (a_uri: READABLE_STRING_GENERAL): detachable IRON_REPOSITORY
+			-- Repository associated with uri string `a_uri'	
+		local
+			iri: IRI
+		do
+			create iri.make_from_string (a_uri)
+			if iri.is_valid then
+				Result := repository (iri.to_uri)
+			end
 		end
 
 feature -- Access: packages
 
+	is_package_installed (a_package: IRON_PACKAGE): BOOLEAN
+			-- Is package `a_package' installed?
+		deferred
+		end
+
 	installed_packages: LIST [IRON_PACKAGE]
+			-- List of installed packages.
 		deferred
 		end
 
 	available_packages: LIST [IRON_PACKAGE]
+			-- List of available packages.	
 		deferred
 		end
 
 	available_path_associated_with_uri (a_uri: URI): detachable PATH
+			-- Expected installation path of available package associated with `a_uri'.
 		deferred
 		end
 
 	package_associated_with_id (a_id: READABLE_STRING_GENERAL): detachable IRON_PACKAGE
+			-- Available package associated with `a_id'.
 		do
 			across
 				repositories as c
@@ -62,6 +89,7 @@ feature -- Access: packages
 		end
 
 	package_associated_with_uri (a_uri: URI): detachable IRON_PACKAGE
+			-- Available package associated with `a_uri'.
 		local
 			s: STRING
 		do
@@ -71,13 +99,13 @@ feature -- Access: packages
 			until
 				Result /= Void
 			loop
-				if s.starts_with (c.item.url) then
-					Result := c.item.package_associated_with_uri (a_uri)
-				end
+				Result := c.item.package_associated_with_uri (a_uri)
 			end
 		end
 
 	packages_associated_with_name (a_name: READABLE_STRING_GENERAL): detachable LIST [IRON_PACKAGE]
+			-- List of available packages with name `a_name'.	
+			--| used to find out conflicts.
 		do
 			create {ARRAYED_LIST [IRON_PACKAGE]} Result.make (1)
 			across
@@ -106,12 +134,20 @@ feature -- Operation
 
 feature -- Package operations
 
-	download_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
+	download_package (a_repo: IRON_WEB_REPOSITORY; a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
 		deferred
 		end
 
-	install_package (a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
-			-- Install `a_package'.
+	install_package (a_repo: IRON_REPOSITORY; a_package: IRON_PACKAGE; ignoring_cache: BOOLEAN)
+			-- Install package `a_package' from repository `a_repo'.
+			-- If `ignoring_cache' is True, the archive will be download again even if it was already download before.
+		deferred
+		end
+
+	setup_package_installation (a_package: IRON_PACKAGE; cl_succeed: detachable CELL [BOOLEAN]; is_silent: BOOLEAN)
+			-- Process setup instruction for installed package `a_package'.
+		require
+			is_package_installed: is_package_installed (a_package)
 		deferred
 		end
 
@@ -121,7 +157,7 @@ feature -- Package operations
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

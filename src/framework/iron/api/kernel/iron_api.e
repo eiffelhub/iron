@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_API}."
 	author: ""
-	date: "$Date: 2013-09-24 15:52:55 +0200 (mar., 24 sept. 2013) $"
-	revision: "$Revision: 92997 $"
+	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
+	revision: "$Revision: 94640 $"
 
 deferred class
 	IRON_API
@@ -50,9 +50,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

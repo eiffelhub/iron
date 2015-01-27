@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CONSTANTS}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
+	revision: "$Revision: 95181 $"
 
 class
 	IRON_CONSTANTS
@@ -19,7 +19,7 @@ feature -- Version
 
 	minor: NATURAL_16 = 1
 
-	built: STRING = "0007"
+	built: STRING = "0010"
 
 	version: IMMUTABLE_STRING_8
 		local
@@ -35,8 +35,14 @@ feature -- Version
 			create Result.make_from_string (s)
 		end
 
+	copyright: IMMUTABLE_STRING_32
+			-- Associated Copyright.
+		once
+			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2014. All Rights Reserved.")
+		end
+
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

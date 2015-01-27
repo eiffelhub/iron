@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_OBSERVER}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-02-05 13:49:41 +0100 (mer., 05 févr. 2014) $"
+	revision: "$Revision: 94187 $"
 
 deferred class
 	IRON_NODE_OBSERVER
@@ -23,8 +23,17 @@ feature -- Package
 		deferred
 		end
 
+	on_version_package_updated (p: IRON_NODE_VERSION_PACKAGE; flag_is_new: BOOLEAN)
+		deferred
+		end
+
+	on_version_package_downloaded (p: IRON_NODE_VERSION_PACKAGE)
+			-- Whenever a package archive is downloaded.
+		deferred
+		end
+
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

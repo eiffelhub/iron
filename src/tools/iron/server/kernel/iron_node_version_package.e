@@ -2,8 +2,8 @@ note
 	description: "[
 				This represents a package on the iron node (i.e server)
 			]"
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2014-06-03 15:41:28 +0200 (mar., 03 juin 2014) $"
+	revision: "$Revision: 95223 $"
 
 class
 	IRON_NODE_VERSION_PACKAGE
@@ -41,6 +41,9 @@ feature -- Access
 	version: IRON_NODE_VERSION
 			-- Associated version.
 
+	download_count: INTEGER assign set_download_count
+			-- Download count.
+
 feature -- Comparison		
 
 	is_equal (other: IRON_NODE_VERSION_PACKAGE): BOOLEAN
@@ -49,6 +52,19 @@ feature -- Comparison
 			-- (from ANY)
 		do
 			Result := (package ~ other.package) and then (version ~ other.version)
+		end
+
+	is_named (a_name: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is package named `a_name' ?
+		local
+			s: detachable READABLE_STRING_32
+		do
+			if a_name /= Void then
+				s := name
+				if s /= Void then
+					Result := a_name.is_case_insensitive_equal (s)
+				end
+			end
 		end
 
 feature -- Status report
@@ -61,13 +77,14 @@ feature -- Status report
 
 feature -- Access
 
+	identifier: READABLE_STRING_32
+		do
+			Result := package.identifier
+		end
+
 	human_identifier: READABLE_STRING_32
 		do
-			if attached name as l_name then
-				Result := l_name
-			else
-				Result := id.to_string_32
-			end
+			Result := package.human_identifier
 		end
 
 	id: IMMUTABLE_STRING_8
@@ -85,6 +102,11 @@ feature -- Access
 			Result := package.name
 		end
 
+	title: detachable READABLE_STRING_32
+		do
+			Result := package.title
+		end
+
 	description: detachable READABLE_STRING_32
 		do
 			Result := package.description
@@ -97,23 +119,72 @@ feature -- Access
 
 feature -- Tags
 
-	tags: LIST [READABLE_STRING_32]
+	tags: detachable LIST [READABLE_STRING_32]
 		do
 			Result := package.tags
 		end
 
+	links: detachable STRING_TABLE [IRON_NODE_LINK]
+		do
+			Result := package.links
+		end
+
 feature -- Access: archive
+
+	archive: detachable IRON_NODE_ARCHIVE
+
+	archive_revision: NATURAL
+			-- Associated archive revision for this version.
 
 	has_archive: BOOLEAN
 		do
-			Result := archive_path /= Void
+			Result := archive /= Void
 		end
 
 	archive_path: detachable PATH
+		do
+			if attached archive as a then
+				Result := a.path
+			end
+		end
 
 	archive_file_size: INTEGER
+		do
+			if attached archive as a then
+				Result := a.file_size
+			end
+		end
 
 	archive_last_modified: detachable DATE_TIME
+		do
+			if attached archive as a then
+				Result := a.last_modified
+			end
+		end
+
+	archive_md5: detachable STRING
+			-- MD5 hash for associated archive file, if any.
+		do
+			if attached archive as a then
+				Result := a.hash_md5
+			end
+		end
+
+	archive_sha1: detachable STRING
+			-- SHA1 hash for associated archive file, if any.
+		do
+			if attached archive as a then
+				Result := a.hash_sha1
+			end
+		end
+
+	archive_hash: detachable STRING
+			-- Default hash for associated archive file, if any.
+		do
+			if attached archive as a then
+				Result := a.hash
+			end
+		end
 
 feature -- Access: items	
 
@@ -144,21 +215,30 @@ feature -- Change
 			tb.force (v, k)
 		end
 
-	set_archive_path (v: detachable PATH)
+	remove (k: READABLE_STRING_GENERAL)
+		local
+			tb: like items
 		do
-			archive_path := v
-			get_archive_info
+			tb := items
+			if tb /= Void then
+				tb.remove (k)
+			end
 		end
 
---	set_last_modified (dt: like last_modified)
---		do
---			last_modified := dt
---		end
---
---	set_last_modified_now
---		do
---			create last_modified.make_now_utc
---		end
+	set_download_count (a_count: INTEGER)
+		do
+			download_count := a_count
+		end
+
+	set_archive (a_archive: detachable IRON_NODE_ARCHIVE)
+		do
+			archive := a_archive
+		end
+
+	set_archive_revision (a_rev: NATURAL)
+		do
+			archive_revision := a_rev
+		end
 
 feature -- Visitor
 
@@ -167,24 +247,8 @@ feature -- Visitor
 			vis.visit_package_version (Current)
 		end
 
-feature {NONE} -- Implementation
-
-	get_archive_info
-		local
-			f: RAW_FILE
-		do
-			if attached archive_path as p then
-				create f.make_with_path (p)
-				archive_file_size := f.count
-				create archive_last_modified.make_from_epoch (f.change_date)
-			else
-				archive_file_size := 0
-				archive_last_modified := Void
-			end
-		end
-
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
