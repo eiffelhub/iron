@@ -17,7 +17,6 @@
 		<library name="arg_parser" location="$ISE_LIBRARY\library\runtime\process\arg_parser\argument_parser-safe.ecf"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base-safe.ecf"/>
 		<library name="base_extension" location="$ISE_LIBRARY\library\base_extension\base_extension-safe.ecf"/>
-		<library name="configuration_parser" location="$EIFFEL_SRC\framework\configuration\configuration_parser-safe.ecf"/>
 		<library name="crypto" location="$ISE_LIBRARY\unstable\library\text\encryption\crypto\crypto-safe.ecf"/>
 		<library name="encoding" location="$ISE_LIBRARY\library\encoding\encoding-safe.ecf"/>
 		<library name="http" location="$ISE_LIBRARY\contrib\library\network\protocol\http\http-safe.ecf" readonly="false"/>
@@ -38,20 +37,8 @@
 		<library name="process" location="$ISE_LIBRARY\library\process\process-safe.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time-safe.ecf"/>
 		<library name="uri" location="$ISE_LIBRARY\library\text\uri\uri-safe.ecf" readonly="false"/>
-		<library name="string_expander" location="..\..\..\framework\string_expander\string_expander-safe.ecf"/>
 
 		<library name="uuid" location="$ISE_LIBRARY\library\uuid\uuid-safe.ecf" readonly="false"/>
 		<cluster name="application" location=".\application\" recursive="true"/>
-	</target>
-	<target name="es_iron" extends="iron">
-		<description>customized IRON client to be integrated with EiffelStudio</description>
-		<root class="ES_IRON_CLIENT" feature="make"/>
-		<option debug="false">
-			<debug name="iron" enabled="true"/>
-		</option>
-		<setting name="console_application" value="true"/>
-		<setting name="executable_name" value="iron"/>
-		<library name="environment" location="..\..\..\framework\environment\environment-safe.ecf"/>
-		<cluster name="es_application" location=".\es_application\" recursive="true"/>
 	</target>
 </system>
