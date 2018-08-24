@@ -1,9 +1,14 @@
-IRON repository 
-===============
+About
+=====
 
-IRON or the Eiffel package repository
+IRON is the Eiffel package manager. IRON makes install Eiffel packages easy:
 
-An easy solution to use Eiffel packages (libraries, ...).
+    iron install crypto
+
+will install the crypto library.
 
 
-[Dashboard](http://waffle.io/eiffelhub/iron)
+Documentation
+=============
+
+Usage documentation can be [found here](https://iron.eiffel.com/doc/#Package%20Repository%20vs%20Library%20Repository).
