@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_UPDATE_TASK}."
 	author: ""
-	date: "$Date: 2014-04-04 15:49:22 +0200 (ven., 04 avr. 2014) $"
-	revision: "$Revision: 94781 $"
+	date: "$Date: 2016-03-18 23:55:29 +0100 (ven., 18 mars 2016) $"
+	revision: "$Revision: 98572 $"
 
 class
 	IRON_UPDATE_TASK
@@ -33,21 +33,24 @@ feature -- Execute
 			print ("Updating iron data ...%N")
 			if args.is_simulation then
 
-			elseif args.repositories.count > 0 then
-				across
-					args.repositories as ic
-				loop
-					if attached a_iron.catalog_api.repository_at (ic.item) as repo then
-						a_iron.catalog_api.update_repository (repo, False)
-					end
-				end
 			else
-				a_iron.catalog_api.update
+				if args.repositories.count > 0 then
+					across
+						args.repositories as ic
+					loop
+						if attached a_iron.catalog_api.repository_at (ic.item) as repo then
+							a_iron.catalog_api.update_repository (repo, False)
+						end
+					end
+				else
+					a_iron.catalog_api.update
+				end
+				a_iron.installation_api.notify_change
 			end
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -2,9 +2,9 @@ note
 	description: "[
 		Objects that ...
 	]"
-	author: "$Author: jfiat $"
-	date: "$Date: 2014-03-19 22:36:43 +0100 (mer., 19 mars 2014) $"
-	revision: "$Revision: 94649 $"
+	author: "$Author: manus $"
+	date: "$Date: 2015-12-17 14:34:17 +0100 (jeu., 17 déc. 2015) $"
+	revision: "$Revision: 98279 $"
 
 class
 	IRON_NODE_BATCH
@@ -39,7 +39,7 @@ feature -- Execution
 			end
 		end
 
-	Operations: STRING_TABLE [PROCEDURE [ANY, TUPLE]]
+	Operations: STRING_TABLE [PROCEDURE]
 		once
 			create Result.make (3)
 			Result.put (agent operate_help, "help")

@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2014-02-04 22:23:08 +0100 (mar., 04 févr. 2014) $"
-	revision    : "$Revision: 94170 $"
+	date        : "$Date: 2016-02-12 09:49:01 +0100 (ven., 12 févr. 2016) $"
+	revision    : "$Revision: 98510 $"
 
 class
 	HTML_IRON_NODE_ITERATOR
@@ -69,16 +69,16 @@ feature -- Visit
 				s.append (p.id)
 				s.append (")</span>")
 				if attached p.description as l_description then
-					s.append ("<div class=%"description%">")
-					s.append (l_description)
-					s.append ("</div>")
+					s.append ("<pre class=%"description%">")
+					s.append (html_encoder.encoded_string (l_description))
+					s.append ("</pre>")
 				end
 				if attached p.tags as l_tags and then not l_tags.is_empty then
 					s.append ("<div class=%"tags%">")
 					across
 						l_tags as ic_tags
 					loop
-						s.append (ic_tags.item)
+						s.append (html_encoder.encoded_string (ic_tags.item))
 						s.append_character (',')
 					end
 					if s.ends_with (",") then
@@ -209,16 +209,16 @@ feature -- Visit
 					s.append (p.id)
 					s.append (")</span>")
 					if attached p.description as l_description then
-						s.append ("<div class=%"description%">")
-						s.append (l_description)
-						s.append ("</div>")
+						s.append ("<pre class=%"description%">")
+						s.append (html_encoder.encoded_string (l_description))
+						s.append ("</pre>")
 					end
 					if attached p.tags as l_tags and then not l_tags.is_empty then
 						s.append ("<div class=%"tags%">")
 						across
 							l_tags as ic_tags
 						loop
-							s.append (ic_tags.item)
+							s.append (html_encoder.encoded_string (ic_tags.item))
 							s.append_character (',')
 						end
 						if s.ends_with (",") then
@@ -275,6 +275,21 @@ feature -- Visit
 								end
 							end
 						end
+					end
+					if attached p.notes as l_notes and then not l_notes.is_empty then
+						s.append ("<ul class=%"notes%">")
+						across
+							l_notes as ic_notes
+						loop
+							if attached ic_notes.item as l_note then
+								s.append ("<li>")
+								s.append (html_encoder.encoded_string (ic_notes.key.as_string_32))
+								s.append_character (':')
+								s.append (html_encoder.encoded_string (l_note))
+								s.append ("</li>")
+							end
+						end
+						s.append ("</ul>")
 					end
 					if attached p.last_modified as dt then
 						s.append ("<div class=%"lastmodified%"><span>")
@@ -346,7 +361,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

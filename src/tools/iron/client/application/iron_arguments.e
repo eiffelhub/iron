@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_ARGUMENTS}."
 	author: ""
-	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
-	revision: "$Revision: 95181 $"
+	date: "$Date: 2018-06-25 18:22:10 +0200 (Mon, 25 Jun 2018) $"
+	revision: "$Revision: 101867 $"
 
 deferred class
 	IRON_ARGUMENTS
@@ -86,9 +86,9 @@ feature -- Access
 	copyright: IMMUTABLE_STRING_32
 			-- <Precursor>
 		once
-			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2014. All Rights Reserved.")
+			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2018. All Rights Reserved.")
 		end
-
+	
 	version: IMMUTABLE_STRING_32
 			-- <Precursor>
 		once

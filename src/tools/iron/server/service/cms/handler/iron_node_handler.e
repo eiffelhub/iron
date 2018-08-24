@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_HANDLER}."
 	author: ""
-	date: "$Date: 2015-01-23 00:21:04 +0100 (ven., 23 janv. 2015) $"
-	revision: "$Revision: 96524 $"
+	date: "$Date: 2016-01-06 21:20:14 +0100 (mer., 06 janv. 2016) $"
+	revision: "$Revision: 98365 $"
 
 deferred class
 	IRON_NODE_HANDLER
@@ -77,18 +77,28 @@ feature -- Access
 			end
 		end
 
+feature -- Permission		
+
+	has_permission_to_administrate_versions (req: WSF_REQUEST): BOOLEAN
+		do
+			Result := attached current_user (req) as u and then user_has_permission_to_administrate_versions (u)
+		end
+
 	has_permission_to_modify_package (req: WSF_REQUEST; a_package: IRON_NODE_PACKAGE): BOOLEAN
 		do
-			if attached current_user (req) as u then
-				Result := user_has_permission_to_modify_package (u, a_package)
-			end
+			Result := attached current_user (req) as u and then user_has_permission_to_modify_package (u, a_package)
 		end
 
 	has_permission_to_modify_package_version (req: WSF_REQUEST; a_package: IRON_NODE_VERSION_PACKAGE): BOOLEAN
 		do
-			if attached current_user (req) as u then
-				Result := user_has_permission_to_modify_package_version (u, a_package)
-			end
+			Result := attached current_user (req) as u and then user_has_permission_to_modify_package_version (u, a_package)
+		end
+
+feature -- Permission user.				
+
+	user_has_permission_to_administrate_versions (a_user: IRON_NODE_USER): BOOLEAN
+		do
+			Result := user_has_permission (a_user, "admin versions")
 		end
 
 	user_has_permission_to_modify_package (a_user: IRON_NODE_USER; a_package: IRON_NODE_PACKAGE): BOOLEAN
@@ -96,7 +106,7 @@ feature -- Access
 			if attached a_package.owner as o then
 				Result := a_user.same_user (o) or else a_user.is_administrator
 			else
-				Result := a_user.is_administrator
+				Result := user_has_permission (a_user, "modify any package")
 			end
 		end
 
@@ -105,8 +115,24 @@ feature -- Access
 			if attached a_package.owner as o then
 				Result := a_user.same_user (o) or else a_user.is_administrator
 			else
-				Result := a_user.is_administrator
+				Result := user_has_permission (a_user, "modify any package version")
 			end
+		end
+
+feature -- Permission core.		
+
+	user_has_permission (a_user: IRON_NODE_USER; a_permission: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			if a_user.is_administrator then
+				Result := True
+			elseif attached a_user.roles as l_roles then
+				Result := across l_roles as ic some user_role_has_permission (ic.item, a_permission) end
+			end
+		end
+
+	user_role_has_permission (a_role: IRON_NODE_USER_ROLE; a_permission: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			Result := False
 		end
 
 feature -- Request: methods
@@ -304,6 +330,13 @@ feature -- Package form
 			f_tags.set_size (50)
 			f.extend (f_tags)
 
+			if vp /= Void then
+				create f_fieldset.make
+				f_fieldset.set_legend ("Associated URIs")
+				f.extend (f_fieldset)
+				f_fieldset.extend_html_text ("<a href=%""+ iron.package_version_map_web_page (vp, Void) +"%">Manage associated URIs</a>")
+			end
+
 			create f_fieldset.make
 			f_fieldset.set_legend ("Associated Archive")
 
@@ -319,8 +352,8 @@ feature -- Package form
 
 			if vp /= Void and then vp.has_archive then
 --				f_fieldset.insert_after (create {WSF_FORM_RAW_TEXT}.make ("Has already an archive (" + p.archive_file_size.out + " octets)"), f_archive)
-				f_fieldset.extend_text ("Has already an archive (" + vp.archive_file_size.out + " octets)")
-				f_fieldset.extend_text ("<div>You can delete this archive by clicking <a href=%""+ iron.package_version_archive_web_page (vp) +"?" + Method_query_parameter + "=DELETE%">[DELETE]</a></div>")
+				f_fieldset.extend_html_text ("Has already an archive (" + vp.archive_file_size.out + " octets)")
+				f_fieldset.extend_html_text ("<div>You can delete this archive by clicking <a href=%""+ iron.package_version_archive_web_page (vp) +"?" + Method_query_parameter + "=DELETE%">[DELETE]</a></div>")
 			end
 			f.extend (f_fieldset)
 
@@ -558,16 +591,39 @@ feature -- Factory
 			end
 		end
 
-	new_not_permitted_response_message (req: WSF_REQUEST): IRON_NODE_HTML_RESPONSE
+	new_not_permitted_response_message (a_package: detachable IRON_NODE_VERSION_PACKAGE; req: WSF_REQUEST): IRON_NODE_HTML_RESPONSE
+		local
+			s: STRING
 		do
 			Result := new_response_message (req)
-			Result.set_body ("Operation not permitted.")
+			create s.make_from_string ("<p class=%"error%">Operation not permitted.</p>%N")
+			if a_package /= Void then
+				s.append ("<p><a href=%"")
+				s.append (iron.package_version_view_web_page (a_package))
+				s.append ("%">Back to package page %"")
+				s.append (html_encoder.encoded_string (a_package.human_identifier))
+				s.append ("%"</a>.</p>%N")
+			end
+			if attached req.http_referer as l_referer then
+				s.append ("<p><a href=%"")
+				s.append (l_referer)
+				s.append ("%">Back to previous page</a>.</p>%N")
+			end
+			Result.set_body (s)
 		end
 
 	new_not_found_response_message (req: WSF_REQUEST): IRON_NODE_HTML_RESPONSE
+		local
+			s: STRING
 		do
 			Result := new_response_message (req)
-			Result.set_body ("Resource not found.")
+			create s.make_from_string ("<p class=%"error%">Resource not found.</p>%N")
+			if attached req.http_referer as l_referer then
+				s.append ("<p><a href=%"")
+				s.append (l_referer)
+				s.append ("%">Back to previous page</a>.</p>%N")
+			end
+			Result.set_body (s)
 		end
 
 feature {NONE} -- Implementation
@@ -578,7 +634,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2015, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

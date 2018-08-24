@@ -1,16 +1,16 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2014-04-09 13:25:04 +0200 (mer., 09 avr. 2014) $"
-	revision    : "$Revision: 94796 $"
+	date        : "$Date: 2015-06-16 16:05:18 +0200 (mar., 16 juin 2015) $"
+	revision    : "$Revision: 97476 $"
 
 class
 	IRON_NODE_SERVICE_APPLICATION
 
 create
-	make,
 	make_and_launch,
-	make_from_iron_and_arguments
+	make
+
 
 feature {NONE} -- Initialization
 
@@ -22,21 +22,7 @@ feature {NONE} -- Initialization
 
 	make
 		do
-			make_from_iron_and_arguments ((create {IRON_NODE_FACTORY}).iron_node, (create {ARGUMENTS_32}).argument_array)
 		end
-
-	make_from_iron_and_arguments (a_iron: IRON_NODE; args: ARRAY [READABLE_STRING_32])
-		require
-			args_has_index_0: args.lower = 0 and not args.is_empty
-		do
-			iron := a_iron
-		end
-
-feature {NONE} -- Access		
-
-	iron: IRON_NODE
-
-	connector: detachable READABLE_STRING_8
 
 feature -- Execution
 
@@ -44,11 +30,11 @@ feature -- Execution
 		local
 			server: detachable IRON_NODE_SERVER
 		do
-			create server.make_and_launch (iron)
+			create server.make_and_launch
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

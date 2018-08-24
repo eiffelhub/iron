@@ -1,11 +1,11 @@
 note
 	description: "Summary description for {IRON_NODE_SERVER_LAUNCHER_I}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-06-16 16:05:18 +0200 (mar., 16 juin 2015) $"
+	revision: "$Revision: 97476 $"
 
 deferred class
-	IRON_NODE_SERVER_LAUNCHER_I
+	IRON_NODE_SERVER_LAUNCHER_I [G -> WSF_EXECUTION create make end]
 
 inherit
 	SHARED_EXECUTION_ENVIRONMENT
@@ -26,8 +26,8 @@ feature {NONE} -- Initialization
 				ext := l_entry.extension
 			end
 			if ext /= Void then
-				if ext.same_string (nature_nino) then
-					Result := nature_nino
+				if ext.same_string (nature_standalone) then
+					Result := nature_standalone
 				end
 				if ext.same_string (nature_cgi) then
 					Result := nature_cgi
@@ -40,50 +40,50 @@ feature {NONE} -- Initialization
 
 feature {NONE} -- nino		
 
-	nature_nino: STRING = "nino"
+	nature_standalone: STRING = "standalone"
 
-	launch_nino (a_service: WSF_SERVICE; opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
+	launch_standalone (opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
 		local
-			launcher: WSF_NINO_SERVICE_LAUNCHER
+			launcher: WSF_STANDALONE_SERVICE_LAUNCHER [G]
 		do
-			create {WSF_NINO_SERVICE_LAUNCHER} launcher.make_and_launch (a_service, opts)
+			create launcher.make_and_launch (opts)
 		end
 
 feature {NONE} -- cgi
 
 	nature_cgi: STRING = "cgi"
 
-	launch_cgi (a_service: WSF_SERVICE; opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
+	launch_cgi (opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
 		local
-			launcher: WSF_CGI_SERVICE_LAUNCHER
+			launcher: WSF_CGI_SERVICE_LAUNCHER [G]
 		do
-			create {WSF_CGI_SERVICE_LAUNCHER} launcher.make_and_launch (a_service, opts)
+			create launcher.make_and_launch (opts)
 		end
 
 feature {NONE} -- libfcgi
 
 	nature_libfcgi: STRING = "libfcgi"
 
-	launch_libfcgi (a_service: WSF_SERVICE; opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
+	launch_libfcgi (opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
 		local
-			launcher: WSF_LIBFCGI_SERVICE_LAUNCHER
+			launcher: WSF_LIBFCGI_SERVICE_LAUNCHER [G]
 		do
-			create launcher.make_and_launch (a_service, opts)
+			create launcher.make_and_launch (opts)
 		end
 
 feature {WSF_SERVICE} -- Launcher
 
-	launch (a_service: WSF_SERVICE; opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
+	launch (opts: detachable WSF_SERVICE_LAUNCHER_OPTIONS)
 		local
 			nature: like launcher_nature
 		do
 			nature := launcher_nature
-			if nature = Void or else nature = nature_nino then
-				launch_nino (a_service, opts)
+			if nature = Void or else nature = nature_standalone then
+				launch_standalone (opts)
 			elseif nature = nature_cgi then
-				launch_cgi (a_service, opts)
+				launch_cgi (opts)
 			elseif nature = nature_libfcgi then
-				launch_libfcgi (a_service, opts)
+				launch_libfcgi (opts)
 			else
 				-- bye bye
 				(create {EXCEPTIONS}).die (-1)
@@ -91,7 +91,7 @@ feature {WSF_SERVICE} -- Launcher
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -2,8 +2,8 @@ note
 	description: "[
 			Environment for various iron related path and resources ....
 			]"
-	date: "$Date: 2014-05-26 16:22:07 +0200 (lun., 26 mai 2014) $"
-	revision: "$Revision: 95178 $"
+	date: "$Date: 2018-01-15 10:35:45 +0100 (lun., 15 janv. 2018) $"
+	revision: "$Revision: 101238 $"
 
 class
 	IRON_LAYOUT
@@ -67,6 +67,11 @@ feature -- Access
 	repositories_configuration_file: PATH
 		once
 			Result := path.extended ("repositories.conf")
+		end
+
+	repositories_revision_file: PATH
+		once
+			Result := packages_path.extended ("local.rev")
 		end
 
 	repositories_path: PATH
@@ -239,21 +244,28 @@ feature {NONE} -- Implementation
 			create Result.make_from_string (safe_name (repo.location_string))
 		end
 
-	safe_name (a_name: READABLE_STRING_32): STRING_8
+	safe_name (a_name: READABLE_STRING_GENERAL): STRING_8
+		local
+			i,n: INTEGER
+			c: CHARACTER_32
 		do
 			create Result.make (a_name.count)
-			across
-				a_name as c
+			from
+				i := 1
+				n := a_name.count
+			until
+				i > n
 			loop
-				inspect c.item
+				c := a_name[i]
+				inspect c
 				when ':', '/' then
 					Result.append_character ('_')
 				when 'a' .. 'z' then
-					Result.append_character (c.item.to_character_8)
+					Result.append_character (c.to_character_8)
 				when 'A' .. 'Z' then
-					Result.append_character (c.item.to_character_8)
+					Result.append_character (c.to_character_8)
 				when '0' .. '9' then
-					Result.append_character (c.item.to_character_8)
+					Result.append_character (c.to_character_8)
 				when '!', '@', '?' then
 					Result.append_character ('+')
 				when '-' then
@@ -261,12 +273,13 @@ feature {NONE} -- Implementation
 				else
 					Result.append_character ('_')
 				end
+				i := i + 1
 			end
 		end
 
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

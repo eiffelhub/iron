@@ -1,8 +1,8 @@
 note
-	description: "Summary description for {CREATE_PACKAGE_HANDLER}."
+	description: "Summary description for {EDIT_PACKAGE_HANDLER}."
 	author: ""
-	date: "$Date: 2013-12-17 17:33:35 +0100 (mar., 17 déc. 2013) $"
-	revision: "$Revision: 93746 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	EDIT_PACKAGE_HANDLER
@@ -64,7 +64,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

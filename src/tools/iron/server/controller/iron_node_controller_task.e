@@ -1,11 +1,14 @@
 note
 	description: "Summary description for {IRON_NODE_CONTROLLER_TASK}."
 	author: ""
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 deferred class
 	IRON_NODE_CONTROLLER_TASK
+
+inherit
+	LOCALIZED_PRINTER
 
 feature {NONE} -- Initialization
 
@@ -48,7 +51,7 @@ feature -- Execution
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

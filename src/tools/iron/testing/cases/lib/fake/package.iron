@@ -1,11 +1,13 @@
--- test
 package fake
 
 project
-	fake_safe = "fake-safe.ecf"
 
 note
-	title:Fake package
-	tags:fake
+	title: Fake package
+	tags: fake
+--	description: 
+--	license: 
+--	copyright: 
+--	link[doc]: "Documentation" http:// 
 
 end

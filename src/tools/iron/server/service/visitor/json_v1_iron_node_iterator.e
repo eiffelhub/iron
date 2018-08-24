@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2015-01-23 00:34:29 +0100 (ven., 23 janv. 2015) $"
-	revision    : "$Revision: 96526 $"
+	date        : "$Date: 2016-02-12 10:04:19 +0100 (ven., 12 févr. 2016) $"
+	revision    : "$Revision: 98512 $"
 
 class
 	JSON_V1_IRON_NODE_ITERATOR
@@ -162,7 +162,7 @@ feature -- Visit
 	visit_package (p: IRON_NODE_PACKAGE)
 		local
 			js: JSON_STRING
-			j_object: JSON_OBJECT
+			j_object, j_notes, j_links: JSON_OBJECT
 			j_array: JSON_ARRAY
 		do
 			create j_object.make
@@ -189,6 +189,27 @@ feature -- Visit
 				end
 				j_object.put (j_array, "tags")
 			end
+			if attached p.items as l_notes then
+				create j_notes.make_with_capacity (l_notes.count)
+				across
+					l_notes as ic_notes
+				loop
+					if attached ic_notes.item as l_note_text then
+						j_notes.put_string (l_note_text, ic_notes.key)
+					end
+				end
+				j_object.put (j_notes, "notes")
+			end
+			if attached p.links as l_links then
+				create j_links.make_with_capacity (l_links.count)
+				across
+					l_links as ic_links
+				loop
+						-- Ignore the link title for now.
+					j_links.put_string (ic_links.item.url, ic_links.key)
+				end
+				j_object.put (j_links, "links")
+			end
 			last_json_value := j_object
 		end
 
@@ -196,7 +217,7 @@ feature -- Visit
 		local
 			js: JSON_STRING
 --			l_size: INTEGER
-			j_object: JSON_OBJECT
+			j_object, j_notes, j_links: JSON_OBJECT
 			j_array: JSON_ARRAY
 		do
 			check same_version: attached version as v implies v ~ p.version end
@@ -258,6 +279,27 @@ feature -- Visit
 				end
 				j_object.put (j_array, "paths")
 			end
+			if attached p.notes as l_notes then
+				create j_notes.make_with_capacity (l_notes.count)
+				across
+					l_notes as ic_notes
+				loop
+					if attached ic_notes.item as l_note_text then
+						j_notes.put_string (l_note_text, ic_notes.key)
+					end
+				end
+				j_object.put (j_notes, "notes")
+			end
+			if attached p.links as l_links then
+				create j_links.make_with_capacity (l_links.count)
+				across
+					l_links as ic_links
+				loop
+						-- Ignore the link title for now.
+					j_links.put_string (ic_links.item.url, ic_links.key)
+				end
+				j_object.put (j_links, "links")
+			end
 			last_json_value := j_object
 		end
 
@@ -313,7 +355,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2015, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

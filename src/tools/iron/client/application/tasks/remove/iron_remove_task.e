@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_REMOVE_TASK}."
 	author: ""
-	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
-	revision: "$Revision: 94640 $"
+	date: "$Date: 2016-03-18 23:55:29 +0100 (ven., 18 mars 2016) $"
+	revision: "$Revision: 98572 $"
 
 class
 	IRON_REMOVE_TASK
@@ -128,6 +128,7 @@ feature -- Execute
 					else
 						a_iron.catalog_api.uninstall_package (l_package)
 						print (" -> ")
+						a_iron.installation_api.notify_change
 						a_iron.installation_api.refresh_installed_packages
 						if a_iron.installation_api.is_package_installed (l_package) then
 							print (tk_failed)
@@ -141,7 +142,7 @@ feature -- Execute
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

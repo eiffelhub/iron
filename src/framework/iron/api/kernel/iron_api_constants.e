@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_API_CONSTANTS}."
 	author: ""
-	date: "$Date: 2013-11-21 13:47:20 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93492 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	IRON_API_CONSTANTS
@@ -40,7 +40,7 @@ feature -- Version
 
 	minor: NATURAL_16 = 1
 
-	built: STRING = "0007"
+	built: STRING = "0009"
 
 	version: IMMUTABLE_STRING_8
 		local
@@ -57,7 +57,7 @@ feature -- Version
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

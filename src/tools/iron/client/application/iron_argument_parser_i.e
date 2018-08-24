@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_ARGUMENT_PARSER_I}."
 	author: ""
-	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
-	revision: "$Revision: 95181 $"
+	date: "$Date: 2018-03-22 10:41:57 +0100 (Thu, 22 Mar 2018) $"
+	revision: "$Revision: 101546 $"
 
 deferred class
 	IRON_ARGUMENT_PARSER_I
@@ -45,7 +45,7 @@ feature {NONE} -- Status report
 	switch_prefixes: ARRAY [CHARACTER_32]
 			-- Prefixes used to indicate a command line switch.
 		once
-			Result := <<'-'>>
+			Result := {ARRAY [CHARACTER_32]} <<'-'>>
 		end
 
 	help_switch: IMMUTABLE_STRING_32
@@ -70,7 +70,7 @@ feature -- Access
 
 	sub_system_name: IMMUTABLE_STRING_32
 		do
-			Result := task.name
+			create Result.make_from_string_general (task.name)
 		end
 
 feature {NONE} -- Usage
@@ -81,7 +81,7 @@ feature {NONE} -- Usage
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

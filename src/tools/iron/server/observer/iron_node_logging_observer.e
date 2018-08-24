@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_NODE_LOGGING_OBSERVER}."
-	date: "$Date: 2014-04-09 13:25:04 +0200 (mer., 09 avr. 2014) $"
-	revision: "$Revision: 94796 $"
+	date: "$Date: 2015-12-17 14:34:17 +0100 (jeu., 17 déc. 2015) $"
+	revision: "$Revision: 98279 $"
 
 class
 	IRON_NODE_LOGGING_OBSERVER
@@ -21,7 +21,7 @@ feature {NONE} -- Initialization
 			level := a_level
 		end
 
-	logging: PROCEDURE [ANY, TUPLE [IRON_NODE_LOG]]
+	logging: PROCEDURE [IRON_NODE_LOG]
 
 	level: NATURAL_8
 			-- logging level

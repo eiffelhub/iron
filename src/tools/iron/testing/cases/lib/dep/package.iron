@@ -1,12 +1,13 @@
-package
-	dep
+package dep
 
 project
-	dep_safe = "dep-safe.ecf"
 
 note
-	title: "Dep package"
-	description: "Package with dependencies on base and fake"
-	tags:dep, dependency
+	title: Dep package
+	description: Package with dependencies on base and fake
+	tags: dep, dependency
+--	license: 
+--	copyright: 
+--	link[doc]: "Documentation" http:// 
 
 end

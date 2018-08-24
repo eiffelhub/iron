@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_DATABASE}."
 	author: ""
-	date: "$Date: 2015-01-22 22:06:59 +0100 (jeu., 22 janv. 2015) $"
-	revision: "$Revision: 96522 $"
+	date: "$Date: 2016-03-19 00:40:27 +0100 (sam., 19 mars 2016) $"
+	revision: "$Revision: 98575 $"
 
 deferred class
 	IRON_NODE_DATABASE
@@ -53,8 +53,14 @@ feature -- Credential
 
 feature -- Version
 
-	versions: ITERABLE [IRON_NODE_VERSION]
+	versions: IRON_NODE_VERSION_COLLECTION
 		deferred
+		end
+
+	save_version (a_version: IRON_NODE_VERSION)
+		deferred
+		ensure
+			created: versions.has (a_version.value)
 		end
 
 feature -- Package
@@ -81,7 +87,7 @@ feature -- Package
 			Result /= Void implies Result.is_named (a_name)
 		end
 
-	packages (a_lower, a_upper: INTEGER): detachable LIST [IRON_NODE_PACKAGE]
+	packages (a_lower, a_upper: INTEGER): detachable IRON_NODE_PACKAGE_COLLECTION
 			-- Range [a_lower:a_upper] of packages for version `v'
 			-- if a_upper <= 0 then a_upper start from the end.
 		require
@@ -126,7 +132,7 @@ feature -- Version Package: Access
 		deferred
 		end
 
-	version_packages (v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): detachable LIST [IRON_NODE_VERSION_PACKAGE]
+	version_packages (v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): detachable IRON_NODE_VERSION_PACKAGE_COLLECTION
 			-- Range [a_lower:a_upper] of packages for version `v'
 			-- if a_upper <= 0 then a_upper start from the end.
 		require
@@ -156,120 +162,295 @@ feature -- Version Package: Access
 			count_incremented: a_package.download_count > old a_package.download_count
 		end
 
-	query_version_packages (q: READABLE_STRING_32; v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): LIST [IRON_NODE_VERSION_PACKAGE]
+	query_version_packages (q: READABLE_STRING_32; v: IRON_NODE_VERSION; a_lower, a_upper: INTEGER): IRON_NODE_VERSION_PACKAGE_COLLECTION
 			-- Range [a_lower:a_upper] of packages for version `v' meeting the criteria expressed by `q'
 			-- if a_upper <= 0 then a_upper start from the end.
 		local
 			i: INTEGER
+			lst: LIST [IRON_NODE_VERSION_PACKAGE]
 		do
-			create {ARRAYED_LIST [IRON_NODE_VERSION_PACKAGE]} Result.make (0)
-			if attached version_packages (v, 1, 0) as lst then
+			create Result.make (0)
+			if attached version_packages (v, 1, 0) as coll then
 				if attached version_package_criteria_factory.criteria_from_string (q) as crit then
-					Result := crit.list (lst)
+					lst := crit.list (coll.items)
 					if a_upper >= a_lower then
 						from
-							Result.start
+							lst.start
 							i := 1
 						until
-							i = a_lower or Result.after
+							i = a_lower or lst.after
 						loop
-							Result.remove
+							lst.remove
 						end
 						from
-							Result.finish
+							lst.finish
 							i := a_upper - a_lower
 						until
-							Result.count = i
+							lst.count = i
 						loop
-							Result.remove
+							lst.remove
+						end
+					end
+					across
+						lst as ic
+					loop
+						Result.force (ic.item)
+					end
+				end
+			end
+--			Result.sort
+		end
+
+feature -- Version Package: Sorter
+
+	version_package_sorter_factory: IRON_SORTER_FACTORY [IRON_NODE_VERSION_PACKAGE]
+		local
+			l_sorter: SORTER [IRON_NODE_VERSION_PACKAGE]
+			eq: detachable AGENT_EQUALITY_TESTER [IRON_NODE_VERSION_PACKAGE]
+		once
+			create Result.make (4)
+
+				-- by name
+			create eq.make (agent version_package_is_less_than_by_name)
+			create {QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]} l_sorter.make (eq)
+			Result.register_builder ("name", l_sorter, "Sort by short name")
+
+				-- by title
+			create eq.make (agent version_package_is_less_than_by_title)
+			create {QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]} l_sorter.make (eq)
+			Result.register_builder ("title", l_sorter, "Sort by title (i.e full name)")
+
+				-- by downloads
+			create eq.make (agent version_package_is_less_than_by_downloads)
+			create {QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]} l_sorter.make (eq)
+			Result.register_builder ("downloads", l_sorter, "Sort by downloads count")
+
+				-- by date
+			create eq.make (agent version_package_is_less_than_by_last_modified)
+			create {QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]} l_sorter.make (eq)
+			Result.register_builder ("date", l_sorter, "Sort by last-modified date")
+		end
+
+feature {NONE} -- Version Package: Sorter
+
+	version_package_is_less_than_by_string_value (s1, s2: detachable READABLE_STRING_GENERAL; p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+			if s1 = Void then
+				if s2 = Void then
+					Result := p1 < p2
+				else
+					Result := True
+				end
+			elseif s2 = Void then
+				Result := False
+			else
+				Result := s1.as_lower < s2.as_lower
+			end
+		end
+
+	version_package_is_less_than_by_value (v1, v2: detachable COMPARABLE; p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+			if v1 = Void then
+				if v2 = Void then
+					Result := p1 < p2
+				else
+					Result := True
+				end
+			elseif v2 = Void then
+				Result := False
+			else
+				Result := v1 < v2
+			end
+		end
+
+	version_package_is_less_than_by_name (p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+			Result := version_package_is_less_than_by_string_value (p1.name, p2.name, p1, p2)
+		end
+
+	version_package_is_less_than_by_title (p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+			Result := version_package_is_less_than_by_string_value (p1.title, p2.title, p1, p2)
+		end
+
+	version_package_is_less_than_by_downloads (p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+				-- Users expect to see packages with more download first.
+			Result := version_package_is_less_than_by_value (p2.download_count, p1.download_count, p1, p2)
+		end
+
+	version_package_is_less_than_by_last_modified (p1, p2: IRON_NODE_VERSION_PACKAGE): BOOLEAN
+		do
+				-- Users expect to see by default, latest changes first.
+			Result := version_package_is_less_than_by_value (p2.last_modified, p1.last_modified, p1, p2)
+		end
+
+feature -- Version Package: Criteria
+
+	meet_text (a_text: detachable READABLE_STRING_GENERAL; s: READABLE_STRING_GENERAL): BOOLEAN
+		local
+			kmp: KMP_WILD
+			tok: READABLE_STRING_GENERAL
+			tok_len: INTEGER
+			l_lower_text: READABLE_STRING_GENERAL
+			c: CHARACTER_32
+			i: INTEGER
+		do
+			if a_text /= Void then
+				if s.has ('*') or s.has ('?') then
+					create kmp.make (s, a_text)
+					kmp.disable_case_sensitive
+					Result := kmp.pattern_matches
+				else
+					from
+						l_lower_text := a_text.as_lower
+						tok := s.as_lower
+						tok_len := tok.count
+						i := 1
+					until
+						i = 0 or Result
+					loop
+						i := l_lower_text.substring_index (tok, i)
+						if i > 0 then
+							Result := True
+							if i > 1 then
+									-- Check lower boundary
+								c := l_lower_text [i - 1]
+								if c.is_alpha_numeric then
+									Result := False
+								end
+							end
+							if Result and i + tok_len <= l_lower_text.count then
+									-- Check lower boundary
+								c := l_lower_text [i + tok_len]
+								if c.is_alpha_numeric then
+									Result := False
+								end
+							end
+							if not Result then
+								i := i + 1
+							end
 						end
 					end
 				end
 			end
 		end
 
-feature -- Version Package: Criteria
+	score_for_name (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			Result := if meet_text (obj.identifier, s) then 1.0 else 0.0 end
+		end
 
-	version_package_criteria_factory: CRITERIA_FACTORY [IRON_NODE_VERSION_PACKAGE]
+	score_for_title (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			Result := if meet_text (obj.title, s) then 1.0 else 0.0 end
+		end
+
+	score_for_description (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			Result := if meet_text (obj.description, s) then 1.0 else 0.0 end
+		end
+
+	score_for_tag (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			if attached obj.tags as l_tags then
+				if across l_tags as ic some meet_text (ic.item, s) end then
+					Result := 1.0
+				end
+			end
+		end
+
+	score_for_owner (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			if attached obj.owner as o then
+				Result := if meet_text (o.name, s) then 1.0 else 0.0 end
+			end
+		end
+
+	score_for_downloads (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		local
+			i: INTEGER
+		do
+			if s.is_integer then
+				i := s.to_integer
+				Result := if obj.download_count >= i then 1.0 else 0.0 end
+			end
+		end
+
+	score_for_text (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): REAL
+		do
+			Result :=  score_for_name (obj, s) * score_weight_for_name
+					+ score_for_title (obj, s) * score_weight_for_title
+					+ score_for_tag (obj, s) * score_weight_for_tag
+--					+ score_for_description (obj, s) * score_weight_for_description
+		end
+
+	score_weight_for_name: REAL = 0.25
+	score_weight_for_title: REAL = 0.2
+	score_weight_for_tag: REAL = 0.20
+	score_weight_for_description: REAL = 0.15
+	score_weight_for_owner: REAL = 0.1
+	score_weight_for_downloads: REAL = 0.1
+	score_weight_for_text: REAL
+		do
+			Result := score_weight_for_name + score_weight_for_title + score_weight_for_tag --+ score_weight_for_description
+		end
+
+	version_package_criteria_factory: SCORER_CRITERIA_FACTORY [IRON_NODE_VERSION_PACKAGE]
 		once
 			create Result.make
-			Result.register_builder ("name", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+
+			Result.register_builder ("name", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
 					do
-						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
-							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
-								local
-									kmp: KMP_WILD
-								do
-									if attached obj.name as l_name then
-										if s.has ('*') or s.has ('?') then
-											create kmp.make (s, l_name)
-											kmp.disable_case_sensitive
-											Result := kmp.pattern_matches
-										else
-											Result := l_name.as_lower.has_substring (s.as_lower)
-										end
-									end
-								end(?, v)
-							)
-					end)
-			Result.register_builder ("title", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_name, agent score_for_name (?, v))
+					end
+				)
+			Result.register_builder ("title", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
 					do
-						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
-							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
-								local
-									kmp: KMP_WILD
-								do
-									if attached obj.title as l_title then
-										if s.has ('*') or s.has ('?') then
-											create kmp.make (s, l_title)
-											kmp.disable_case_sensitive
-											Result := kmp.pattern_matches
-										else
-											Result := l_title.as_lower.has_substring (s.as_lower)
-										end
-									end
-								end(?, v)
-							)
-					end)
-			Result.register_builder ("tag", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_title, agent score_for_title (?, v))
+					end
+				)
+			Result.register_builder ("tag", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
 					do
-						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
-							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
-								do
-									Result := attached obj.tags as l_tags and then
-										across l_tags as ic some ic.item.is_case_insensitive_equal_general (s) end
-								end(?, v)
-							)
-					end)
-			Result.register_builder ("owner", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_tag, agent score_for_tag (?, v))
+					end
+				)
+			Result.register_builder ("description", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
 					do
-						create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
-							agent (obj: IRON_NODE_VERSION_PACKAGE; s: READABLE_STRING_GENERAL): BOOLEAN
-								do
-									Result := attached obj.owner as l_owner and then
-										l_owner.name.is_case_insensitive_equal_general (s)
-								end(?, v)
-							)
-					end)
-			Result.register_builder ("downloads", agent (n,v: READABLE_STRING_GENERAL): detachable CRITERIA [IRON_NODE_VERSION_PACKAGE]
-					local
-						i: INTEGER
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_description, agent score_for_description (?, v))
+					end
+				)
+			Result.register_builder ("owner", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
 					do
-						if v.is_integer then
-							i := v.to_integer
-							create {CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v,
-								agent (obj: IRON_NODE_VERSION_PACKAGE; nb: INTEGER): BOOLEAN
-									do
-										Result := obj.download_count >= nb
-									end(?, i)
-								)
-						end
-					end)
-			Result.register_default_builder ("name")
-			Result.set_builder_description ("name", "has package name (support wildcard)")
-			Result.set_builder_description ("tag", "has tag")
-			Result.set_builder_description ("owner", "is published by username")
-			Result.set_builder_description ("downloads", "has at least N downloads")
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_owner, agent score_for_owner (?, v))
+					end
+				)
+			Result.register_builder ("downloads", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_downloads, agent score_for_downloads (?, v))
+					end
+				)
+			Result.register_builder ("text", agent (n,v: READABLE_STRING_GENERAL): detachable SCORER_CRITERIA [IRON_NODE_VERSION_PACKAGE]
+					do
+						create {SCORER_CRITERIA_AGENT [IRON_NODE_VERSION_PACKAGE]} Result.make (n + ":" + v, score_weight_for_text, agent score_for_text (?, v))
+					end
+				)
+
+			Result.register_default_builder ("text")
+			Result.set_builder_description ("text", "text:abc - equivalent to %"name:abc or title:abc or tag:abc%"")
+
+			Result.set_builder_description ("name", "name:foo* - packages of short name matching %"foo*%" pattern")
+			Result.set_builder_description ("title", "title:base - packages of title %"base%"")
+			Result.set_builder_description ("description", "description:%"advanced usage%" - packages with phrase %"advanced usage%" in their description")
+			Result.set_builder_description ("tag", "tag:web - packages tagged %"web%"")
+			Result.set_builder_description ("owner", "owner:*Caesar - packages published by users with the user names matching %"*Caesar%"")
+			Result.set_builder_description ("downloads", "downloads:10 - packages with at least 10 downloads")
+		end
+
+	version_package_criteria_factory_description: STRING_32
+		once
+			Result := version_package_criteria_factory.description
+				+ "Criteria %"name%", %"title%", %"tag%" and %"description%" supports wildcards (*,?).%N"
 		end
 
 feature -- Version Package: change		
@@ -294,8 +475,7 @@ feature -- Version Package: change
 			has_id: a_package.has_id
 		deferred
 		ensure
-			has_no_id: not a_package.has_id
-			version_package (a_package.version, old a_package.id) = Void
+			deleted: version_package (a_package.version, old a_package.id) = Void
 		end
 
 feature -- Version Package/ archive: change	
@@ -367,7 +547,7 @@ feature -- Version Package/ map,path: change
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

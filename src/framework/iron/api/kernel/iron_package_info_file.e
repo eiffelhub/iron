@@ -2,8 +2,8 @@ note
 	description: "[
 			Package information file is represented by {IRON_PACKAGE_INFO_FILE}.
 		]"
-	date: "$Date: 2014-04-18 17:27:42 +0200 (ven., 18 avr. 2014) $"
-	revision: "$Revision: 94890 $"
+	date: "$Date: 2018-01-15 10:35:45 +0100 (lun., 15 janv. 2018) $"
+	revision: "$Revision: 101238 $"
 
 class
 	IRON_PACKAGE_INFO_FILE
@@ -17,7 +17,8 @@ inherit
 		end
 
 create {IRON_PACKAGE_FILE_FACTORY}
-	make_from_path
+	make_from_path,
+	make_from_text
 
 feature {NONE} -- Initialization
 
@@ -35,6 +36,24 @@ feature {NONE} -- Initialization
 			create l_parser.make
 			l_parser.set_callbacks (Current)
 			l_parser.parse (fn)
+			has_error := l_parser.error_occurred
+		end
+
+	make_from_text (fn: PATH; a_text: READABLE_STRING_8)
+			-- Create info file `fn' with `a_text' as content.
+		do
+			path := fn
+			create notes.make (0)
+			import_text (a_text)
+		end
+
+	import_text (a_text: READABLE_STRING_8)
+		local
+			l_parser: IRON_PACKAGE_INFO_FILE_PARSER
+		do
+			create l_parser.make
+			l_parser.set_callbacks (Current)
+			l_parser.parse_text (a_text)
 			has_error := l_parser.error_occurred
 		end
 
@@ -74,7 +93,7 @@ feature -- Access
 			if a_value = Void then
 				remove (a_name)
 			else
-				notes.put (a_value, a_name)
+				notes.force (a_value, a_name)
 			end
 		end
 
@@ -93,7 +112,7 @@ feature -- Change
 			notes.wipe_out
 		end
 
-feature {NONE} -- Internal
+feature -- Access
 
 	package_name: detachable IMMUTABLE_STRING_32
 
@@ -112,8 +131,8 @@ feature -- Conversion
 
 			if attached item ("id") as l_id and then l_id.is_valid_as_string_8 then
 				create Result.make (l_id.to_string_8, a_repo)
-			elseif l_name /= Void then
-				create Result.make (l_name + "@" + a_repo.location_string, a_repo)
+			elseif l_name /= Void and then l_name.is_valid_as_string_8 then
+				create Result.make (l_name.to_string_8 + "@" + a_repo.location_string, a_repo)
 			else
 				create Result.make_empty (a_repo)
 			end
@@ -344,7 +363,7 @@ feature -- Storage
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

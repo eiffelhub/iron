@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_TASK}."
 	author: ""
-	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
-	revision: "$Revision: 94640 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 deferred class
 	IRON_TASK
@@ -45,7 +45,7 @@ feature -- Networking
 
 	new_client: HTTP_CLIENT
 		do
-			create {LIBCURL_HTTP_CLIENT} Result.make
+			create {DEFAULT_HTTP_CLIENT} Result
 		end
 
 feature -- Execute
@@ -116,7 +116,7 @@ feature -- Helper
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

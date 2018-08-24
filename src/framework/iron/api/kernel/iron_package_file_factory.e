@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_PACKAGE_FILE_FACTORY}."
-	date: "$Date: 2014-03-19 17:58:52 +0100 (mer., 19 mars 2014) $"
-	revision: "$Revision: 94640 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	IRON_PACKAGE_FILE_FACTORY
@@ -23,8 +23,13 @@ feature -- Factory
 			end
 		end
 
+	new_package_info_file_from_text (fn: PATH; a_text: READABLE_STRING_8): IRON_PACKAGE_INFO_FILE
+		do
+			create Result.make_from_text (fn, a_text)
+		end
+
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

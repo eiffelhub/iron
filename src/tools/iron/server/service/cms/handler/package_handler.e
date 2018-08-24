@@ -1,7 +1,7 @@
 note
-	description: "Summary description for {SEARCH_PACKAGE_HANDLER}."
-	date: "$Date: 2014-02-04 22:23:08 +0100 (mar., 04 févr. 2014) $"
-	revision: "$Revision: 94170 $"
+	description: "Summary description for {PACKAGE_HANDLER}."
+	date: "$Date: 2016-01-06 21:20:14 +0100 (mer., 06 janv. 2016) $"
+	revision: "$Revision: 98365 $"
 
 class
 	PACKAGE_HANDLER
@@ -91,7 +91,7 @@ feature -- Execution
 					iron.database.delete_version_package (l_package)
 					res.redirect_now (iron.package_version_list_web_page (iron_version (req)))
 				else
-					res.send (new_not_permitted_response_message (req))
+					res.send (new_not_permitted_response_message (l_package, req))
 				end
 			else
 				res.send (new_not_found_response_message (req))
@@ -109,7 +109,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

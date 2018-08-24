@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_PACKAGE_INSTALLATION_INFO}."
-	date: "$Date: 2015-01-23 00:34:09 +0100 (ven., 23 janv. 2015) $"
-	revision: "$Revision: 96525 $"
+	date: "$Date: 2018-01-15 10:35:45 +0100 (lun., 15 janv. 2018) $"
+	revision: "$Revision: 101238 $"
 
 class
 	IRON_PACKAGE_INSTALLATION_INFO
@@ -162,10 +162,15 @@ feature -- Storage
 				j.append_character ('}')
 			end
 
-			if l_package /= Void and then attached l_package.json_item as l_json then
+			if
+				l_package /= Void and then
+				attached l_package.json_item as l_json and then
+				l_json.is_valid_as_string_8
+			then
+					-- FIXME: check if `l_json` is valid JSON value as well [2018-01-15]
 				j.append_character (',')
 				j.append ("%"package%":")
-				j.append (l_json)
+				j.append (l_json.to_string_8)
 			end
 
 			j.append_character ('}')
@@ -192,10 +197,10 @@ feature -- Conversion
 				Result.put_json_item (j_package.representation)
 				Result.set_name (j_name.item)
 				if attached {JSON_STRING} j_package.item ("title") as j_title then
-					Result.set_title (j_title.item)
+					Result.set_title (j_title.unescaped_string_32)
 				end
 				if attached {JSON_STRING} j_package.item ("description") as j_description then
-					Result.set_description (j_description.item)
+					Result.set_description (j_description.unescaped_string_32)
 				end
 				if attached {JSON_NUMBER} j_package.item ("archive_revision") as j_rev then
 					s := j_rev.item
@@ -229,7 +234,25 @@ feature -- Conversion
 						j_tags.array_representation as c
 					loop
 						if attached {JSON_STRING} c.item as js then
-							Result.tags.force (js.item)
+							Result.tags.force (js.unescaped_string_32)
+						end
+					end
+				end
+				if attached {JSON_OBJECT} j_package.item ("links") as j_links then
+					across
+						j_links as c
+					loop
+						if attached {JSON_STRING} c.item as js then
+							Result.put (js.unescaped_string_32, {STRING_32} "link["+ c.key.unescaped_string_32 +"]")
+						end
+					end
+				end
+				if attached {JSON_OBJECT} j_package.item ("notes") as j_notes then
+					across
+						j_notes as c
+					loop
+						if attached {JSON_STRING} c.item as js then
+							Result.put (js.unescaped_string_32, c.key.unescaped_string_32)
 						end
 					end
 				end
@@ -287,7 +310,7 @@ feature {NONE} -- Helpers
 		end
 
 note
-	copyright: "Copyright (c) 1984-2015, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

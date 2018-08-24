@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {IRON_NODE_VERSION}."
-	date: "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision: "$Revision: 93491 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	IRON_NODE_VERSION
@@ -13,6 +13,11 @@ inherit
 		end
 
 	DEBUG_OUTPUT
+		redefine
+			is_equal
+		end
+
+	COMPARABLE
 		redefine
 			is_equal
 		end
@@ -50,6 +55,12 @@ feature -- Access
 
 feature -- Status report
 
+	is_less alias "<" (other: like Current): BOOLEAN
+			-- <Precursor>.
+		do
+			Result := value.as_lower < other.value.as_lower
+		end
+
 	debug_output: READABLE_STRING_GENERAL
 			-- String that should be displayed in debugger to represent `Current'.
 		do
@@ -78,7 +89,7 @@ feature -- Visitor
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

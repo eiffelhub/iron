@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_CONSTANTS}."
 	author: ""
-	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
-	revision: "$Revision: 95181 $"
+	date: "$Date: 2018-06-25 18:22:10 +0200 (Mon, 25 Jun 2018) $"
+	revision: "$Revision: 101867 $"
 
 class
 	IRON_CONSTANTS
@@ -38,9 +38,9 @@ feature -- Version
 	copyright: IMMUTABLE_STRING_32
 			-- Associated Copyright.
 		once
-			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2014. All Rights Reserved.")
+			create Result.make_from_string_general ("Copyright Eiffel Software 2011-2018. All Rights Reserved.")
 		end
-
+		
 note
 	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
