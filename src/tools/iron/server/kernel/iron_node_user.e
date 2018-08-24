@@ -1,8 +1,8 @@
 note
 	description : "Objects that ..."
 	author      : "$Author: jfiat $"
-	date        : "$Date: 2013-11-21 13:21:54 +0100 (jeu., 21 nov. 2013) $"
-	revision    : "$Revision: 93491 $"
+	date        : "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision    : "$Revision: 98336 $"
 
 class
 	IRON_NODE_USER
@@ -88,14 +88,12 @@ feature -- Change
 			l_roles := roles
 			if l_roles = Void then
 				create {ARRAYED_LIST [IRON_NODE_USER_ROLE]} l_roles.make (1)
+				l_roles.compare_objects
 				roles := l_roles
 			end
 			l_roles.extend (r)
-			if
-				r.name.is_case_insensitive_equal ("admin") or
-				r.name.is_case_insensitive_equal ("administrator")
-			then
-				is_administrator := True
+			if r.name.is_case_insensitive_equal ("administrator") then
+				set_is_administrator (True)
 			end
 		end
 
@@ -105,10 +103,11 @@ feature -- Change
 		do
 			l_roles := roles
 			if l_roles /= Void then
+				check l_roles.object_comparison end
 				l_roles.prune_all (r)
 			end
-			if r.name.is_case_insensitive_equal ("admin") then
-				is_administrator := False
+			if r.name.is_case_insensitive_equal ("administrator") then
+				set_is_administrator (False)
 			end
 		end
 
@@ -143,7 +142,7 @@ invariant
 	name_is_not_empty: not name.is_empty
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

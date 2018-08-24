@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {ARCHIVE_PACKAGE_API_HANDLER}."
 	author: ""
-	date: "$Date: 2014-06-03 14:06:25 +0200 (mar., 03 juin 2014) $"
-	revision: "$Revision: 95222 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	ARCHIVE_PACKAGE_API_HANDLER
@@ -158,7 +158,7 @@ feature -- Documentation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

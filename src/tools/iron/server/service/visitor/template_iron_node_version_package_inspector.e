@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {TEMPLATE_IRON_NODE_VERSION_PACKAGE_INSPECTOR}."
 	author: ""
-	date: "$Date: 2014-05-28 10:18:25 +0200 (mer., 28 mai 2014) $"
-	revision: "$Revision: 95181 $"
+	date: "$Date: 2015-12-29 12:57:12 +0100 (mar., 29 déc. 2015) $"
+	revision: "$Revision: 98336 $"
 
 class
 	TEMPLATE_IRON_NODE_VERSION_PACKAGE_INSPECTOR
@@ -43,6 +43,10 @@ feature -- Internal data
 					Result := cell_of (obj.tags)
 				elseif fn.is_case_insensitive_equal_general ("links") then
 					Result := cell_of (obj.links)
+				elseif fn.is_case_insensitive_equal_general ("notes") then
+					Result := cell_of (obj.notes)
+				elseif fn.is_case_insensitive_equal_general ("items") then
+					Result := cell_of (obj.items)
 				elseif fn.is_case_insensitive_equal_general ("has_archive") then
 					Result := cell_of (obj.has_archive)
 				elseif fn.is_case_insensitive_equal_general ("archive_file_size") then
@@ -73,7 +77,7 @@ feature -- Internal data
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

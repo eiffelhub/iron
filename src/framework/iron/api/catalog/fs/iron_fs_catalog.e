@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_FS_CATALOG}."
 	author: ""
-	date: "$Date: 2014-05-26 16:22:07 +0200 (lun., 26 mai 2014) $"
-	revision: "$Revision: 95178 $"
+	date: "$Date: 2016-01-14 21:52:09 +0100 (jeu., 14 janv. 2016) $"
+	revision: "$Revision: 98388 $"
 
 class
 	IRON_FS_CATALOG
@@ -535,20 +535,20 @@ feature -- Package operations
 			end
 			if p /= Void then
 				if {PLATFORM}.is_windows then
-					Result := p.extended ("compile_library.bat").name
+					Result := p.extended ("finish_freezing.exe").name  + {STRING_32} " -library"
 				else
-					Result := p.extended ("finish_freezing.sh").name + {STRING_32} " -library"
+					Result := p.extended ("finish_freezing").name + {STRING_32} " -library"
 				end
 			else
 				if {PLATFORM}.is_windows then
 					Result := {STRING_32} "finish_freezing.bat -library"
 				else
-					Result := {STRING_32} "finish_freezing.sh -library"
+					Result := {STRING_32} "finish_freezing -library"
 				end
 			end
 		end
 
-	execute_command_line (a_command_line: READABLE_STRING_GENERAL; a_dir: detachable PATH; agt_output: detachable PROCEDURE [ANY, TUPLE [STRING_8]]; cell_return_code: detachable CELL [INTEGER])
+	execute_command_line (a_command_line: READABLE_STRING_GENERAL; a_dir: detachable PATH; agt_output: detachable PROCEDURE [STRING_8]; cell_return_code: detachable CELL [INTEGER])
 			-- Execute `a_command_line' in folder `a_dir' (if provided),
 			-- return the exit code in `cell_return_code.item' if `cell_return_code' is provided,
 			-- and return the output in `cell_output.item' if `a_output' is provided.
@@ -606,11 +606,11 @@ feature {NONE} -- Helper
 
 	new_client: HTTP_CLIENT
 		do
-			create {LIBCURL_HTTP_CLIENT} Result.make
+			create {DEFAULT_HTTP_CLIENT} Result
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

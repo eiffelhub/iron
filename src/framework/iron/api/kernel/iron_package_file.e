@@ -2,8 +2,8 @@ note
 	description: "[
 			Package information file is represented by {IRON_PACKAGE_FILE}.
 		]"
-	date: "$Date: 2014-04-18 17:27:42 +0200 (ven., 18 avr. 2014) $"
-	revision: "$Revision: 94890 $"
+	date: "$Date: 2016-11-29 09:21:43 +0100 (mar., 29 nov. 2016) $"
+	revision: "$Revision: 99551 $"
 
 deferred class
 	IRON_PACKAGE_FILE
@@ -143,12 +143,14 @@ feature -- Conversion
 			-- Iron uri location for `a_relative_ecf_path'.
 			--| similar to "iron:package-name:relative_ecf_uri_path"
 		local
+			l_path: like path
 			p1,p2: PATH_URI
 			s1,s2: STRING
 			p: READABLE_STRING_8
 		do
-			create p1.make_from_path (path.absolute_path.canonical_path)
-			create p2.make_from_path (path.extended_path (a_relative_ecf_path).absolute_path.canonical_path)
+			l_path := path
+			create p1.make_from_path (l_path.absolute_path.canonical_path)
+			create p2.make_from_path (l_path.extended_path (a_relative_ecf_path).absolute_path.canonical_path)
 			s1 := p1.string
 			s2 := p2.string
 			if s2.starts_with (s1) then
@@ -157,6 +159,10 @@ feature -- Conversion
 					create Result.make_from_string ("iron:")
 					Result.set_unencoded_path (l_name)
 					p := Result.path
+						-- FIXME: workaround issue with URI on linux (fixed by rev#98343).
+					if not p.is_empty and then p[1] = '/' then
+						p := p.substring (2, p.count)
+					end
 					Result.set_path (p + ":" + s2)
 				end
 			end
@@ -203,6 +209,30 @@ feature -- Change
 			else
 				l_proj.name := a_proj_name
 				l_proj.relative_iri := a_relative_iri
+			end
+		end
+
+	remove_project (a_proj_name: detachable READABLE_STRING_32; a_relative_iri: READABLE_STRING_32)
+			-- Remove project for path `a_relative_iri`, and optionaly named `a_proj_name`.
+		local
+			l_proj: detachable TUPLE [name: READABLE_STRING_GENERAL; relative_iri: READABLE_STRING_32]
+		do
+			if attached projects as l_projects then
+				from
+					l_projects.start
+				until
+					l_projects.after
+				loop
+					l_proj := l_projects.item
+					if
+						a_relative_iri.is_case_insensitive_equal_general (l_proj.relative_iri) and then
+						(a_proj_name = Void or else	a_proj_name.is_case_insensitive_equal_general (l_proj.name))
+					then
+						l_projects.remove
+						l_projects.finish
+					end
+					l_projects.forth
+				end
 			end
 		end
 
@@ -288,7 +318,7 @@ feature -- Helper
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

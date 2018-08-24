@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_INFO_TASK}."
 	author: ""
-	date: "$Date: 2014-06-03 14:06:25 +0200 (mar., 03 juin 2014) $"
-	revision: "$Revision: 95222 $"
+	date: "$Date: 2015-01-27 13:52:53 +0100 (mar., 27 janv. 2015) $"
+	revision: "$Revision: 96539 $"
 
 class
 	IRON_INFO_TASK
@@ -92,7 +92,7 @@ feature -- Execute
 					print (" size=")
 					print (l_size.out)
 				end
-				if attached a_package.archive_hash as l_hash then
+				if attached a_package.archive_hash_string as l_hash then
 					print (" hash=")
 					print (l_hash)
 				end
@@ -143,7 +143,7 @@ feature -- Execute
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2015, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

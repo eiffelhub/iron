@@ -12,8 +12,8 @@ note
 		iron update						: Update repositories information.
 	]"
 	author: "$Author: jfiat $"
-	date: "$Date: 2014-05-28 18:04:15 +0200 (mer., 28 mai 2014) $"
-	revision: "$Revision: 95183 $"
+	date: "$Date: 2016-04-19 17:03:55 +0200 (mar., 19 avr. 2016) $"
+	revision: "$Revision: 98632 $"
 
 class
 	IRON_CLIENT
@@ -142,7 +142,7 @@ feature {NONE} -- Initialization
 			Result /= Void implies a_name.same_string (Result.name)
 		end
 
-	tasks: STRING_TABLE [TUPLE [factory_function: FUNCTION [ANY, TUPLE [ARRAY [IMMUTABLE_STRING_32]], IRON_TASK]; description: READABLE_STRING_GENERAL]]
+	tasks: STRING_TABLE [TUPLE [factory_function: FUNCTION [ARRAY [IMMUTABLE_STRING_32], IRON_TASK]; description: READABLE_STRING_GENERAL]]
 		once
 			create Result.make_caseless (7 + 1)
 
@@ -177,23 +177,23 @@ feature -- Constants access
 	iron_executable_name: IMMUTABLE_STRING_32
 			-- Associated executable name.
 		once
-			Result := (create {IRON_CONSTANTS}).copyright
+			create Result.make_from_string_general ((create {IRON_CONSTANTS}).executable_name)
 		end
 
 	iron_copyright: IMMUTABLE_STRING_32
 			-- Associated copyright.
 		once
-			Result := (create {IRON_CONSTANTS}).copyright
+			create Result.make_from_string_general ((create {IRON_CONSTANTS}).copyright)
 		end
 
 	iron_version: IMMUTABLE_STRING_32
 			-- Associated version.
 		once
-			Result := (create {IRON_CONSTANTS}).version
+			create Result.make_from_string_general ((create {IRON_CONSTANTS}).version)
 		end
 
 note
-	copyright: "Copyright (c) 1984-2015, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

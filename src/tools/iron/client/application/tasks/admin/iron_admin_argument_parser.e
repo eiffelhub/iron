@@ -5,8 +5,8 @@ note
 				iron update
 		]"
 	author: ""
-	date: "$Date: 2013-05-23 21:54:29 +0200 (jeu., 23 mai 2013) $"
-	revision: "$Revision: 92585 $"
+	date: "$Date: 2015-12-07 15:09:44 +0100 (lun., 07 déc. 2015) $"
+	revision: "$Revision: 98202 $"
 
 class
 	IRON_ADMIN_ARGUMENT_PARSER
@@ -87,7 +87,6 @@ feature {NONE} -- Switches
 			Telephone 805-685-1006, Fax 805-685-6869
 			Website http://www.eiffel.com
 			Customer support http://support.eiffel.com
-		]"rt.eiffel.com
 		]"
 
 end

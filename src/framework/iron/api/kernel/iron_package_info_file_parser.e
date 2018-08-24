@@ -15,13 +15,13 @@ note
 					tags:comma,separated,keywords
 					licence: Eiffel Forum v2
 					copyright: Copyright....
-					link[doc]: http://docs.eiffel.com/....
+					link[doc]: https://eiffel.org/doc/....
 					link[github] : https://github.com/...
 				end
 			]"
 	author: ""
-	date: "$Date: 2014-04-18 17:27:42 +0200 (ven., 18 avr. 2014) $"
-	revision: "$Revision: 94890 $"
+	date: "$Date: 2017-05-19 14:57:02 +0200 (ven., 19 mai 2017) $"
+	revision: "$Revision: 100422 $"
 
 class
 	IRON_PACKAGE_INFO_FILE_PARSER
@@ -78,7 +78,6 @@ feature -- Parse
 		local
 			done: BOOLEAN
 			s: STRING
-			utf: UTF_CONVERTER
 		do
 			create s.make (2_046)
 			from
@@ -90,10 +89,19 @@ feature -- Parse
 				s.append_string (f.last_string)
 				done := f.exhausted or f.last_string.count < 2_046
 			end
+			parse_text (s)
+		end
+
+	parse_text (s: READABLE_STRING_8)
+		local
+			utf: UTF_CONVERTER
+		do
 			buffer.wipe_out
 			utf.utf_8_string_8_into_escaped_string_32 (s, buffer)
 			parse_buffer
 		end
+
+feature {NONE} -- Parsing
 
 	parse_buffer
 		local
@@ -586,7 +594,10 @@ feature -- Parse
 						s.append (next_text_until_eol)
 						s.left_adjust
 						s.right_adjust
-						if s.count >= 2 and s[1] = '"' and s[s.count] = '"' then
+						if
+							(s.count >= 2 and s[1] = '"' and s[s.count] = '"') and then
+							s.index_of ('"', 2) = s.count -- No '"' inside, ex: ` "license" "MIT" ` .
+						then
 							s.remove_head (1)
 							s.remove_tail (1)
 						end
@@ -831,6 +842,10 @@ feature {NONE} -- Implementation
 		end
 
 	normalize_multiline	(s: STRING_32)
+			-- Remove common heading spaces sequence from every line.
+			--| first the code identifies the common heading spaces sequence as `l_prefix'
+			--| then it removes this prefix from the beginning of all lines.
+			--| For instance, if every line starts with "%T%T", this sequence will be removed.
 		local
 			i,j,k,m,n: INTEGER
 			l_prefix: detachable STRING_32
@@ -846,7 +861,10 @@ feature {NONE} -- Implementation
 				if k = 0 then
 					k := n
 				end
-				if l_prefix = Void then
+				if k = i then
+						-- Ignore empty line.
+				elseif l_prefix = Void then
+						-- No prefix identified for now, so let's compute it with the header spaces.
 					from
 						j := i
 					until
@@ -856,6 +874,7 @@ feature {NONE} -- Implementation
 					end
 					l_prefix := s.substring (i, j - 1)
 				else
+						-- Check if the current line starts with `l_prefix'
 					from
 						j := i
 						m := 1
@@ -866,12 +885,17 @@ feature {NONE} -- Implementation
 						j := j + 1
 					end
 					if m <= l_prefix.count and l_prefix[m] /= s[j] then
+							-- the current line does not start with the full `l_prefix'
+							-- so keep only the common part as the new `l_prefix'.
 						l_prefix.keep_head (m - 1)
 					end
 				end
 				i := k + 1
 			end
 			if l_prefix /= Void and then l_prefix.count > 0 then
+					-- A common spaces sequence prefix was found
+					-- so remove this prefix from each line.
+					-- With a special case for first line.
 				if s.starts_with (l_prefix) then
 					s.remove_head (l_prefix.count)
 				end
@@ -888,7 +912,7 @@ feature {NONE} -- Implementation
 invariant
 	buffer_index <= buffer.count + 1
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2017, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

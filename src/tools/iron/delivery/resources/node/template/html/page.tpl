@@ -62,6 +62,7 @@
 		<ul>
 		  <form class="navbar-form navbar-left" role="search" action="{$base_url/}/repository/{$iron_version.value/}/package/">
 			  <div class="form-group">
+				  {unless isempty="$search_sort_by"}<input type="hidden" name="sort-by" value="{$search_sort_by/}" />{/unless}
 				  <input type="text" class="form-control" placeholder="Search" name="query" 
 				  	tooltip="Wildcard are supported" 
 					{unless isempty="$search_query_text"}value="{$search_query_text/}"{/unless}></input>
@@ -78,6 +79,7 @@
 	</nav>
   <div id="main">
   {unless isempty="$page_title"}<h1>{$page_title/}</h1>{/unless}
+  {if condition="$is_front"}{include file="front-page-message.tpl"/}{/if}
   {$main/}
   </div>
   <div id="footer">{$footer/}</div>

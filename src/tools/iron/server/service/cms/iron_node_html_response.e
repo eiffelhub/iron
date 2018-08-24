@@ -1,8 +1,8 @@
 note
 	description: "Summary description for {IRON_NODE_HTML_RESPONSE}."
 	author: ""
-	date: "$Date: 2013-12-19 14:47:56 +0100 (jeu., 19 déc. 2013) $"
-	revision: "$Revision: 93767 $"
+	date: "$Date: 2016-01-06 21:35:39 +0100 (mer., 06 janv. 2016) $"
+	revision: "$Revision: 98366 $"
 
 class
 	IRON_NODE_HTML_RESPONSE
@@ -18,6 +18,8 @@ inherit
 			append_html_body_code,
 			send_to
 		end
+
+	SHARED_TEMPLATE_CONTEXT
 
 create
 	make, make_with_body, make_not_permitted, make_not_found
@@ -55,6 +57,8 @@ feature {NONE} -- Initialization
 			set_body ("Resource not found.")
 		end
 
+feature -- Access		
+
 	iron: IRON_NODE
 
 	request: WSF_REQUEST
@@ -65,6 +69,11 @@ feature {NONE} -- Initialization
 
 	parameters: detachable STRING_TABLE [ANY]
 			-- Associated data, mainly for template mode.
+
+feature -- Status report
+
+	is_front: BOOLEAN
+			-- Is front page?			
 
 feature -- Change
 
@@ -87,6 +96,11 @@ feature -- Change
 				set_status_code ({HTTP_STATUS_CODE}.found)
 				header.put_location (v)
 			end
+		end
+
+	set_is_front (b: BOOLEAN)
+		do
+			is_front := b
 		end
 
 	add_parameter (v: READABLE_STRING_GENERAL; k: READABLE_STRING_8)
@@ -180,6 +194,7 @@ feature {WSF_RESPONSE} -- Output
 		do
 			p := iron.layout.html_template_path.extended ("page.tpl")
 			if ut.file_path_exists (p) then
+				template_context.set_template_folder (iron.layout.html_template_path)
 				create tpl.make_from_file (p.name)
 				tpl.analyze
 
@@ -190,6 +205,8 @@ feature {WSF_RESPONSE} -- Output
 						tpl.add_value (ic.item, utf.escaped_utf_32_string_to_utf_8_string_8 (ic.key)) -- Conversion to STRING_8 !!
 					end
 				end
+
+				tpl.add_value (is_front.out, "is_front")
 
 				tpl.add_value (request.absolute_script_url (""), "base_url")
 				tpl.add_value (request.request_uri, "current_url")
@@ -221,6 +238,7 @@ feature {WSF_RESPONSE} -- Output
 					end
 				end
 				if attached iron.database.versions as l_versions then
+					l_versions.reverse_sort
 					create l_versions_alternatives.make (0)
 					l_url := request.request_uri
 					across
@@ -298,6 +316,7 @@ feature {NONE} -- HTML Generation
 				l_version := Void
 			end
 			if attached iron.database.versions as l_versions then
+				l_versions.reverse_sort
 				create l_form.make (iron.page_redirection (Void), "redirection")
 				l_form.set_method_get
 				create l_combo.make ("redirection")
@@ -328,11 +347,11 @@ feature {NONE} -- HTML Generation
 				across
 					lst as c
 				loop
-					s.append ("<li><a href=%"" + c.item.url + "%">" + html_encoder.encoded_string (c.item.title) + "</a>")
+					s.append ("<li><a href=%"" + c.item.url + "%">" + html_encoder.general_encoded_string (c.item.title) + "</a>")
 					if attached c.item.sub_links as sublst then
 						s.append ("<ul>")
 						across sublst as ic_sub loop
-							s.append ("<li><a href=%"" + ic_sub.item.url + "%">" + html_encoder.encoded_string (ic_sub.item.title) + "</a>")
+							s.append ("<li><a href=%"" + ic_sub.item.url + "%">" + html_encoder.general_encoded_string (ic_sub.item.title) + "</a>")
 						end
 						s.append ("</ul>%N")
 					end
@@ -374,7 +393,7 @@ feature {NONE} -- HTML Generation
 	append_html_body_footer_code (s: STRING)
 		do
 			s.append ("-- IRON package repository (")
-			s.append ("<a href=%"" + request.script_url (iron.cms_page ("/api/")) + "%">API</a>")
+			s.append ("<a href=%"" + request.script_url (iron.api_resource ("/api/")) + "%">API</a>")
 			if iron.is_documentation_available then
 				s.append (" | ")
 				s.append ("<a href=%"" + request.script_url (iron.cms_page ("/doc/")) + "%">Documentation</a>")
@@ -408,7 +427,7 @@ feature {NONE} -- HTML Generation
 		end
 
 note
-	copyright: "Copyright (c) 1984-2013, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

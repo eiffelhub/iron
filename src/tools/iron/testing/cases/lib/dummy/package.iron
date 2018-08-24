@@ -1,11 +1,13 @@
-package
-	dummy
+package dummy
 
 project
-	dummy_safe = "dummy-safe.ecf"
 
 note
-	title: "Dummy package"
-	tags:dummy
+	title: Dummy package
+	tags: dummy
+--	description: 
+--	license: 
+--	copyright: 
+--	link[doc]: "Documentation" http:// 
 
 end
