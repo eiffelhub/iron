@@ -60,8 +60,12 @@ feature -- Access: repositories
 				loop
 					uninstall_package (ic.item)
 				end
+				catalog.unregister_repository (a_uri)
+			else
+				print ("No such repository added%N")
+				print ("To see the list of added repositories:%N")
+				print ("  iron repository --list%N")
 			end
-			catalog.unregister_repository (a_uri)
 		end
 
 	repository (a_uri: URI): detachable IRON_REPOSITORY

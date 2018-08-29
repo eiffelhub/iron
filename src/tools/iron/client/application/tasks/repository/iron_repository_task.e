@@ -66,10 +66,12 @@ feature -- Execute
 				create fac
 				if attached a_iron.catalog_api.repository_at (l_repo_location) then
 					print (m_already_registered_repository_location (l_repo_location))
+					print_new_line
 				elseif attached fac.new_repository (l_repo_location) as repo then
 					a_iron.catalog_api.register_repository (repo)
 				else
 					print (m_invalid_repository_location (l_repo_location))
+					print_new_line
 				end
 			end
 			if attached args.repository_to_remove as l_repo_url then

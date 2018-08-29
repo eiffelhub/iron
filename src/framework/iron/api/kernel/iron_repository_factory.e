@@ -13,6 +13,7 @@ feature -- Factory
 			-- This can be remote url repository or local repository.
 		local
 			iri: IRI
+			l_wc_repo: IRON_WORKING_COPY_REPOSITORY
 		do
 			if a_location.starts_with_general ("http://") or a_location.starts_with_general ("https://") then
 				create iri.make_from_string (a_location)
@@ -22,7 +23,10 @@ feature -- Factory
 					create iri.make_from_string (a_location)
 					create {IRON_WORKING_COPY_REPOSITORY} Result.make_from_uri (iri.to_uri)
 				else
-					create {IRON_WORKING_COPY_REPOSITORY} Result.make (a_location)
+					create l_wc_repo.make (a_location)
+					if l_wc_repo.exists then
+						Result := l_wc_repo
+					end
 				end
 			end
 		end

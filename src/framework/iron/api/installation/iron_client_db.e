@@ -286,8 +286,14 @@ feature -- Change
 			repo_conf: IRON_REPOSITORY_CONFIGURATION_FILE
 		do
 			create repo_conf.make (layout.repositories_configuration_file)
-			repo_conf.remove_repository_by_uri (a_uri)
-			repo_conf.save
+			if repo_conf.has_repository_by_uri (a_uri) then
+				repo_conf.remove_repository_by_uri (a_uri)
+				repo_conf.save
+			else
+				print ("No such repository has been added%N")
+				print ("To see the list of added repositories:%N")
+				print ("  iron repository --list%N")
+			end
 		end
 
 	save_available_repository_packages	(a_repo: IRON_REPOSITORY)

@@ -59,6 +59,8 @@ feature -- Access
 
 	repositories: ARRAYED_LIST [IRON_REPOSITORY]
 
+feature -- Status
+
 	has_repository (repo: IRON_REPOSITORY): BOOLEAN
 		do
 			across
@@ -67,6 +69,17 @@ feature -- Access
 				Result
 			loop
 				Result := ic.item.is_same_repository (repo)
+			end
+		end
+
+	has_repository_by_uri (a_uri: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			across
+				repositories as ic
+			until
+				Result
+			loop
+				Result := ic.item.location_string.out ~ a_uri.out
 			end
 		end
 

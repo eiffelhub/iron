@@ -118,7 +118,7 @@ feature -- Repository task
 		do Result := string_with_args ("Registering repository [$1] ", [a_uri]) end
 
 	m_unregistering_repository (a_uri: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Un-Registering repository [$1] ", [a_uri]) end
+		do Result := string_with_args ("Unregistering repository [$1] ", [a_uri]) end
 
 	m_invalid_repository_location (a_loc: READABLE_STRING_GENERAL): STRING_32
 		do Result := string_with_args ("Invalid repository location [$1] ", [a_loc]) end

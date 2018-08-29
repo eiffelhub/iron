@@ -49,7 +49,7 @@ feature {NONE} -- Initialization
 		do
 			location := a_location_uri
 
-			 	-- Be sure to use same format C:\ vs C|\
+				-- Be sure to use same format C:\ vs C|\
 			create l_path_uri.make_from_file_uri (a_location_uri)
 			create l_path_uri.make_from_path (l_path_uri.file_path)
 			location := l_path_uri
@@ -119,6 +119,12 @@ feature -- Status report
 			if attached {IRON_WORKING_COPY_REPOSITORY} other as l_other_repo then
 				Result := path.canonical_path.name.same_string (l_other_repo.path.canonical_path.name)
 			end
+		end
+
+	exists: BOOLEAN
+			-- Does repository exists?
+		do
+			Result := (create {DIRECTORY}.make_with_path (path)).exists
 		end
 
 	debug_output: READABLE_STRING_GENERAL
