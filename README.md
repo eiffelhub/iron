@@ -1,11 +1,19 @@
 About
 =====
 
-IRON is the Eiffel package manager. IRON makes install Eiffel packages easy:
+IRON is the Eiffel package manager.
+
+
+Example
+=======
+
+Install the crypto package:
 
     iron install crypto
 
-will install the crypto library.
+Reference it in your `.ecf` file:
+
+    <library name="crypto" location="iron:crypto:crypto.ecf"/>
 
 
 Documentation
