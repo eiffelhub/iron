@@ -28,7 +28,7 @@ feature -- List task
 		do Result := string_with_args ("Repository [$1]", [a_uri]) end
 
 	m_repository_without_package (a_uri: READABLE_STRING_GENERAL): STRING_32
-		do Result := string_with_args ("Repository [$1] has no package!", [a_uri]) end
+		do Result := string_with_args ("Repository [$1] has no packages!", [a_uri]) end
 
 feature -- Install task
 
