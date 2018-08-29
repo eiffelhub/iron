@@ -11,4 +11,4 @@ before_install:
   - echo `ec -version`
 
 script:
-  - cd src/tools/client/iron && ec -batch -config client.ecf
+  - cd src/tools/iron/client && ec -batch -config client.ecf
