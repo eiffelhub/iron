@@ -11,11 +11,11 @@ feature -- Factory
 	new_repository (a_location: READABLE_STRING_32): detachable IRON_REPOSITORY
 			-- New repository for location `a_location'.
 			-- This can be remote url repository or local repository.
+			-- note: no verification on the existence is done here!
 		local
 			iri: IRI
-			l_wc_repo: IRON_WORKING_COPY_REPOSITORY
 		do
-			if a_location.starts_with_general ("http://") or a_location.starts_with_general ("https://") then
+			if a_location.starts_with_general ("https://") or a_location.starts_with_general ("http://") then
 				create iri.make_from_string (a_location)
 				create {IRON_WEB_REPOSITORY} Result.make_from_version_uri (iri.to_uri)
 			else
@@ -23,16 +23,13 @@ feature -- Factory
 					create iri.make_from_string (a_location)
 					create {IRON_WORKING_COPY_REPOSITORY} Result.make_from_uri (iri.to_uri)
 				else
-					create l_wc_repo.make (a_location)
-					if l_wc_repo.exists then
-						Result := l_wc_repo
-					end
+					create {IRON_WORKING_COPY_REPOSITORY} Result.make (a_location)
 				end
 			end
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

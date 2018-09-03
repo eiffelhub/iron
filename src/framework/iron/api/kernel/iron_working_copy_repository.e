@@ -123,8 +123,10 @@ feature -- Status report
 
 	exists: BOOLEAN
 			-- Does repository exists?
+		local
+			ut: FILE_UTILITIES
 		do
-			Result := (create {DIRECTORY}.make_with_path (path)).exists
+			Result := ut.directory_path_exists (path)
 		end
 
 	debug_output: READABLE_STRING_GENERAL
@@ -174,7 +176,7 @@ invariant
 --	version_uri_no_trailing_slash: not version_uri.path.ends_with ("/")
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
