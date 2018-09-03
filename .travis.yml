@@ -1,0 +1,19 @@
+language: eiffel
+before_script:
+    - export current_dir=$PWD ; echo current_dir=$current_dir ; cd ..
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export ISE_PLATFORM=linux-x86-64; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export ISE_PLATFORM=macosx-x86-64; fi
+    - curl -sSL https://www.eiffel.org/setup/install.sh | bash > eiffel.rc
+    - source ./eiffel.rc
+    - echo `ec -version`
+    - cd $current_dir
+    - echo Check projects compilation status...
+    
+branches:
+  only:
+  - master
+  - v1
+  - develop
+  
+script: cd src && compile_all -ecb -melt -list_failures -log_verbose -clean -options dotnet=false
+
