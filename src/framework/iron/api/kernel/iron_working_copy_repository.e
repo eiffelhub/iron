@@ -134,6 +134,12 @@ feature -- Status report
 			Result := path.name
 		end
 
+	is_valid: BOOLEAN
+			-- Is Current repository valid?
+		do
+			Result := exists
+		end
+
 feature -- Change
 
 	reset_available_packages

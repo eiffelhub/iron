@@ -137,6 +137,13 @@ feature -- Status report
 			Result := location_string
 		end
 
+	is_valid: BOOLEAN
+			-- Is Current repository valid?
+		do
+				-- For now, no check, as a server can be temporary down, or the connection, ...
+				-- TODO: implement proper validation for web repositories. [2018-09-04]
+			Result := True
+		end
 
 feature -- Change
 
@@ -155,7 +162,7 @@ invariant
 	location_no_trailing_slash: not location.path.ends_with ("/")
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

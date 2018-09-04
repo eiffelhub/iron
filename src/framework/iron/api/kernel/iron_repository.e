@@ -122,6 +122,11 @@ feature -- Status report
 		deferred
 		end
 
+	is_valid: BOOLEAN
+			-- Is Current repository valid?
+		deferred
+		end
+
 feature -- Change
 
 	reset_available_packages
@@ -140,7 +145,7 @@ feature {IRON_EXPORTER} -- Change
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2018, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

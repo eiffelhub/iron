@@ -95,7 +95,14 @@ feature -- Execute
 					print (m_already_registered_repository_location (l_repo_location))
 					print_new_line
 				elseif attached fac.new_repository (l_repo_location) as repo then
-					a_iron.catalog_api.register_repository (repo)
+					if repo.is_valid then
+						a_iron.catalog_api.register_repository (repo)
+					else
+						print (m_invalid_repository_location (l_repo_location))
+						print_new_line
+						print (m_repository_registration_failed (l_repo_location))
+						print_new_line
+					end
 				else
 					print (m_invalid_repository_location (l_repo_location))
 					print_new_line
