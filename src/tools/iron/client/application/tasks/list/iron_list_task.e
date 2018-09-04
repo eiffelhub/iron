@@ -63,7 +63,7 @@ feature -- Execute
 						if not l_only_conflict or else l_has_conflict then
 							print (p.item.human_identifier)
 							if l_has_conflict then
-								print (" [Conflict!] ")
+								print (" [conflict!] ")
 							end
 							print_new_line
 							if args.verbose then
@@ -137,8 +137,8 @@ feature -- Execute
 									if a_iron.installation_api.is_package_installed (p.item) then
 										print (" [installed] ")
 									end
-									if l_has_conflict then
-										print (" [conflict!] ")
+									if l_has_conflict and then attached l_package_names.item (p.item.identifier) as l_earlier_package then
+										print (" [ignoring this package as it is also listed in the " + l_earlier_package.repository.location_string + " repository!] ")
 									end
 									print_new_line
 									if args.verbose then
